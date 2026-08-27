@@ -78,6 +78,7 @@ export default function RegistroModales() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          nombre_web: f.get("nombre_web"),
           nombre: f.get("nombre"),
           correo: f.get("correo"),
           telefono: f.get("telefono"),
@@ -115,6 +116,7 @@ export default function RegistroModales() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          nombre_web: f.get("nombre_web"),
           nombre: f.get("nombre"),
           correo: f.get("correo"),
           telefono: f.get("telefono"),
@@ -199,6 +201,14 @@ export default function RegistroModales() {
 
                 {modo === "inscripcion" ? (
                   <form className="form-grid" onSubmit={enviarInscripcion}>
+                    <input
+                      type="text"
+                      name="nombre_web"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      aria-hidden="true"
+                      style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+                    />
                     <div className="form-field">
                       <label htmlFor="i-asistira">¿Asistirás al evento? *</label>
                       <select id="i-asistira" name="asistira" required defaultValue="">
@@ -317,6 +327,14 @@ export default function RegistroModales() {
                   </form>
                 ) : (
                   <form className="form-grid" onSubmit={enviarPonente}>
+                    <input
+                      type="text"
+                      name="nombre_web"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      aria-hidden="true"
+                      style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+                    />
                     <div className="form-section">Tus datos</div>
                     <div className="form-field">
                       <label htmlFor="p-nombre">Nombre completo *</label>

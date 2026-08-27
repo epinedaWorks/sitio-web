@@ -14,6 +14,26 @@ const nextConfig = {
       bodySizeLimit: "40mb",
     },
   },
+  poweredByHeader: false,
+  async headers() {
+    const base = [
+      { key: "X-Content-Type-Options", value: "nosniff" },
+      { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+      { key: "X-Frame-Options", value: "SAMEORIGIN" },
+      {
+        key: "Permissions-Policy",
+        value: "camera=(), microphone=(), geolocation=(), payment=()",
+      },
+    ];
+    return [
+      { source: "/:path*", headers: base },
+      // El panel nunca debe poder incrustarse en un iframe (anti-clickjacking).
+      {
+        source: "/admin/:path*",
+        headers: [...base, { key: "X-Frame-Options", value: "DENY" }],
+      },
+    ];
+  },
 };
 
 module.exports = nextConfig;

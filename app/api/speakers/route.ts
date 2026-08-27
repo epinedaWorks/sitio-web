@@ -15,6 +15,9 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
+    // Honeypot: campo oculto que solo rellenan los bots. Fingimos éxito.
+    if (str(body.nombre_web)) return NextResponse.json({ ok: true });
+
     const nombre = str(body.nombre);
     const correo = str(body.correo);
     const modalidad = str(body.modalidad);
@@ -115,11 +118,5 @@ export async function POST(req: Request) {
   }
 }
 
-// Lista las postulaciones (usado por el panel admin)
-export async function GET() {
-  const submissions = await prisma.speakerSubmission.findMany({
-    orderBy: { createdAt: "desc" },
-    include: { event: true },
-  });
-  return NextResponse.json(submissions);
-}
+// No hay GET: el panel admin lee las postulaciones directo con Prisma.
+// Un GET público aquí filtraría datos personales de todos los postulantes.

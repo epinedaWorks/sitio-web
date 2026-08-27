@@ -13,14 +13,14 @@ export const metadata: Metadata = {
     template: "%s · Python Guatemala",
   },
   description:
-    "Comunidad Python Guatemala — registrada en la Python Software Foundation. Conferencias, talleres y exposición de proyectos. Inscríbete al XPDay 2026 (Python Exposition Day) en la UVG.",
-  keywords: ["Python", "Guatemala", "comunidad", "XPDay", "Python Exposition Day", "PyCon", "talleres", "conferencias"],
+    "Comunidad Python Guatemala — registrada en la Python Software Foundation. Conferencias, talleres y exposición de proyectos. Inscríbete al Python eXposition Day 2026 en la UVG.",
+  keywords: ["Python", "Guatemala", "comunidad", "Python eXposition Day", "XPDay", "PyCon", "talleres", "conferencias"],
   authors: [{ name: "Comunidad Python Guatemala" }],
   icons: { icon: "/assets/img/brand/favicon.png" },
   openGraph: {
     title: "Comunidad Python Guatemala",
     description:
-      "Aprendemos, construimos y compartimos con Python. Inscríbete al XPDay 2026 · sábado 3 de octubre · UVG.",
+      "Aprendemos, construimos y compartimos con Python. Inscríbete al Python eXposition Day 2026 · sábado 3 de octubre · UVG.",
     type: "website",
     locale: "es_GT",
     images: ["/assets/img/eventos/2025/full/ped2025-42.jpg"],
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
   twitter: {
     card: "summary_large_image",
     title: "Comunidad Python Guatemala",
-    description: "Aprendemos, construimos y compartimos con Python. Inscríbete al XPDay 2026.",
+    description: "Aprendemos, construimos y compartimos con Python. Inscríbete al Python eXposition Day 2026.",
     images: ["/assets/img/eventos/2025/full/ped2025-42.jpg"],
   },
 };

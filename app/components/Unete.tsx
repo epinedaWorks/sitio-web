@@ -9,7 +9,7 @@ export default function Unete() {
           <h2>Sé parte de Python Guatemala</h2>
           <p>
             Seguinos en nuestras redes para no perderte charlas, talleres y el próximo Python
-            Exposition Day. Entrar es gratis y siempre hay espacio para uno más.
+            eXposition Day. Entrar es gratis y siempre hay espacio para uno más.
           </p>
         </div>
         <div className="join-grid">
@@ -31,7 +31,7 @@ export default function Unete() {
           <a className="social-card reveal js-inscribir" href="#eventos">
             <span className="si">🎟️</span>
             <div>
-              <b>Inscríbete al XPDay 2026</b>
+              <b>Inscríbete al Python eXposition Day 2026</b>
               <span>Sábado 3 de octubre · UVG</span>
             </div>
           </a>

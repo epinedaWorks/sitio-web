@@ -9,7 +9,7 @@ export default function Eventos({ albums }: { albums: Album[] }) {
           <span className="eyebrow">Eventos</span>
           <h2>Nuestros encuentros</h2>
           <p>
-            El evento insignia de la comunidad es el <b>Python Exposition Day</b>: un día completo de
+            El evento insignia de la comunidad es el <b>Python eXposition Day</b>: un día completo de
             conferencias, talleres y exposición de proyectos.
           </p>
         </div>
@@ -20,7 +20,7 @@ export default function Eventos({ albums }: { albums: Album[] }) {
           <div className="eu-content">
             <span className="tag tag-live">● Próximo evento · 2026</span>
             <h3>
-              XPDay 2026 <span className="eu-sub">Python Exposition Day</span>
+              Python eXposition Day <span className="eu-sub">2026</span>
             </h3>
             <p>
               Una nueva edición para aprender, construir y conectar en comunidad. Un día completo de
@@ -74,13 +74,13 @@ export default function Eventos({ albums }: { albums: Album[] }) {
 
             <div className="xp-tracks-head">
               <span className="eyebrow">Un día · tres experiencias</span>
-              <h3>¿Qué vas a vivir en el XPDay?</h3>
+              <h3>¿Qué vas a vivir en el Python eXposition Day?</h3>
             </div>
             <div className="xp-tracks">
               {XP_TRACKS.map((t) => (
                 <article className="xp-track" key={t.title}>
                   <div className="xp-img">
-                    <img src={t.img} alt={`${t.title} del XPDay`} loading="lazy" />
+                    <img src={t.img} alt={`${t.title} del Python eXposition Day`} loading="lazy" />
                     <span className="xp-tag">{t.tag}</span>
                   </div>
                   <div className="xp-body">
@@ -100,7 +100,7 @@ export default function Eventos({ albums }: { albums: Album[] }) {
             Fotos de nuestras actividades
           </h2>
           <p>
-            XPDay, Foro de IA, Python After Office, Pyzzathon y más. Cada actividad tiene su álbum.
+Python eXposition Day, Foro de IA, Python After Office, Pyzzathon y más. Cada actividad tiene su álbum.
           </p>
         </div>
 

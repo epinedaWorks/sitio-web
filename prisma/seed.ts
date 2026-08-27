@@ -3,9 +3,9 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
-// Fotos del Python Exposition Day 2025 (viven en /public/assets/img/eventos/2025/full)
+// Fotos del Python eXposition Day 2025 (viven en /public/assets/img/eventos/2025/full)
 const PHOTOS_2025: { file: string; caption: string }[] = [
-  { file: "ped2025-01.jpg", caption: "Apertura del Python Exposition Day 2025" },
+  { file: "ped2025-01.jpg", caption: "Apertura del Python eXposition Day 2025" },
   { file: "ped2025-02.jpg", caption: "Conferencia magistral en el auditorio" },
   { file: "ped2025-03.jpg", caption: "Charla sobre Inteligencia Artificial" },
   { file: "ped2025-04.jpg", caption: "Ponencia principal" },
@@ -25,7 +25,7 @@ const PHOTOS_2025: { file: string; caption: string }[] = [
   { file: "ped2025-18.jpg", caption: "La comunidad Python Guatemala" },
   { file: "ped2025-19.jpg", caption: "Aprendiendo en comunidad" },
   { file: "ped2025-20.jpg", caption: "Ciudad de Guatemala, sede del evento" },
-  { file: "ped2025-21.jpg", caption: "Bienvenidos al Python Exposition Day 2025" },
+  { file: "ped2025-21.jpg", caption: "Bienvenidos al Python eXposition Day 2025" },
   { file: "ped2025-22.jpg", caption: "Nuevas amistades en la comunidad" },
   { file: "ped2025-23.jpg", caption: "Python para todas las edades" },
   { file: "ped2025-24.jpg", caption: "Voluntarios y asistentes" },
@@ -50,7 +50,7 @@ const PHOTOS_2025: { file: string; caption: string }[] = [
   { file: "ped2025-43.jpg", caption: "¡Gracias por acompañarnos!" },
   { file: "ped2025-44.jpg", caption: "La energía de la comunidad" },
   { file: "ped2025-45.jpg", caption: "Panorámica del evento" },
-  { file: "ped2025-46.jpg", caption: "Asistentes del Python Exposition Day 2025" },
+  { file: "ped2025-46.jpg", caption: "Asistentes del Python eXposition Day 2025" },
   { file: "ped2025-47.jpg", caption: "Autoridades y organizadores" },
 ];
 
@@ -68,33 +68,33 @@ async function main() {
     },
   });
 
-  // ---- Evento próximo: XPDay 2026 ----
+  // ---- Evento próximo: Python eXposition Day 2026 ----
   await prisma.event.upsert({
     where: { slug: "xpday-2026" },
     update: {
-      title: "XPDay 2026",
+      title: "Python eXposition Day 2026",
       date: new Date("2026-10-03T08:00:00-06:00"),
       location: "Universidad del Valle de Guatemala (UVG)",
       description:
-        "Una nueva edición del Python Exposition Day para aprender, construir y conectar en comunidad: un día completo de charlas, talleres y exposición de proyectos hechos por la comunidad.",
+        "Una nueva edición del Python eXposition Day para aprender, construir y conectar en comunidad: un día completo de charlas, talleres y exposición de proyectos hechos por la comunidad.",
       published: true,
     },
     create: {
-      title: "XPDay 2026",
+      title: "Python eXposition Day 2026",
       slug: "xpday-2026",
       date: new Date("2026-10-03T08:00:00-06:00"),
       location: "Universidad del Valle de Guatemala (UVG)",
       description:
-        "Una nueva edición del Python Exposition Day para aprender, construir y conectar en comunidad: un día completo de charlas, talleres y exposición de proyectos hechos por la comunidad.",
+        "Una nueva edición del Python eXposition Day para aprender, construir y conectar en comunidad: un día completo de charlas, talleres y exposición de proyectos hechos por la comunidad.",
       published: true,
     },
   });
 
-  // ---- Edición pasada: XPDay 2025 (guarda la galería) ----
+  // ---- Edición pasada: Python eXposition Day 2025 (guarda la galería) ----
   const evento2025 = await prisma.event.upsert({
     where: { slug: "xpday-2025" },
     update: {
-      title: "XPDay 2025",
+      title: "Python eXposition Day 2025",
       date: new Date("2025-10-11T08:00:00-06:00"),
       location: "Universidad del Valle de Guatemala (UVG)",
       description:
@@ -102,7 +102,7 @@ async function main() {
       published: true,
     },
     create: {
-      title: "XPDay 2025",
+      title: "Python eXposition Day 2025",
       slug: "xpday-2025",
       date: new Date("2025-10-11T08:00:00-06:00"),
       location: "Universidad del Valle de Guatemala (UVG)",
@@ -112,22 +112,20 @@ async function main() {
     },
   });
 
-  // ---- Álbum + fotos del XPDay 2025 (idempotente) ----
-  // Renombra el álbum anterior si venía de una versión previa del seed.
-  const albumViejo = await prisma.album.findFirst({
-    where: { eventId: evento2025.id, title: "Galería XPDay 2025" },
-  });
-  if (albumViejo) {
-    await prisma.album.update({ where: { id: albumViejo.id }, data: { title: "XPDay 2025" } });
+  // ---- Álbum + fotos del Python eXposition Day 2025 (idempotente) ----
+  // Renombra el álbum si venía de una versión previa del seed.
+  for (const viejo of ["Galería XPDay 2025", "XPDay 2025"]) {
+    const a = await prisma.album.findFirst({ where: { eventId: evento2025.id, title: viejo } });
+    if (a) await prisma.album.update({ where: { id: a.id }, data: { title: "Python eXposition Day 2025" } });
   }
 
   let album = await prisma.album.findFirst({
-    where: { eventId: evento2025.id, title: "XPDay 2025" },
+    where: { eventId: evento2025.id, title: "Python eXposition Day 2025" },
   });
   if (!album) {
     album = await prisma.album.create({
       data: {
-        title: "XPDay 2025",
+        title: "Python eXposition Day 2025",
         description: "Un auditorio lleno de comunidad · 11 de octubre de 2025 · UVG",
         eventId: evento2025.id,
       },

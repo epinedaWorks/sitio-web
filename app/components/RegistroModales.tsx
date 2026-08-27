@@ -152,7 +152,7 @@ export default function RegistroModales() {
     if (estado === "ok") {
       lanzarToast(
         modo === "inscripcion"
-          ? "¡Inscripción confirmada! Te esperamos en el XPDay 2026."
+          ? "¡Inscripción confirmada! Te esperamos en el Python eXposition Day 2026."
           : "¡Propuesta recibida! El equipo core te escribirá pronto."
       );
     }
@@ -181,7 +181,7 @@ export default function RegistroModales() {
               <>
                 <div className="modal-head">
                   <div>
-                    <h3>{modo === "inscripcion" ? "Inscríbete al XPDay 2026" : "Sé parte del XPDay 2026"}</h3>
+                    <h3>{modo === "inscripcion" ? "Inscríbete al Python eXposition Day 2026" : "Sé parte del Python eXposition Day 2026"}</h3>
                     <p>
                       {modo === "inscripcion"
                         ? "Entrada gratuita · cupo limitado · sábado 3 de octubre · UVG"

@@ -41,7 +41,7 @@ export default function Nav() {
             href="#eventos"
             onClick={() => setOpen(false)}
           >
-            Inscríbete al Python XPDay
+            Inscríbete al Python eXposition Day
           </a>
         </nav>
 

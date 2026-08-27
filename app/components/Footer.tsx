@@ -45,7 +45,7 @@ export default function Footer() {
           <span>
             © {year} Comunidad Python Guatemala. Sitio hecho con 🐍 y 💛 por la comunidad.
           </span>
-          <span>Python Exposition Day · Guatemala</span>
+          <span>Python eXposition Day · Guatemala</span>
         </div>
       </div>
     </footer>

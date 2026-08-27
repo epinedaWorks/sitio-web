@@ -14,7 +14,7 @@ export default function Hero() {
           </p>
           <div className="hero-cta">
             <a className="btn btn-primary js-inscribir" href="#eventos">
-              Inscríbete al XPDay 2026 →
+              Inscríbete al Python eXposition Day 2026 →
             </a>
             <a className="btn btn-ghost" href="#eventos">
               Ver eventos

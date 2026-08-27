@@ -11,7 +11,7 @@ export default async function EventosAdminPage() {
       <h1>Eventos</h1>
 
       <form action={crearEvento} style={{ display: "grid", gap: 10, maxWidth: 480, marginBottom: 32 }}>
-        <input name="title" placeholder="Título (ej. XPDay 2027)" required />
+        <input name="title" placeholder="Título (ej. Python eXposition Day 2027)" required />
         <input name="slug" placeholder="slug (ej. xpday-2027)" required />
         <input name="date" type="datetime-local" required />
         <input name="location" placeholder="Ubicación" />

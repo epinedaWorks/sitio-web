@@ -15,7 +15,7 @@ export default async function PonentesAdminPage() {
       <h1>Postulaciones de ponentes</h1>
       <p style={{ opacity: 0.7 }}>{submissions.length} en total. Haz clic en una para ver todos los datos.</p>
 
-      <p>
+      <p style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <a
           href="/api/admin/export?tipo=ponentes"
           style={{
@@ -28,7 +28,10 @@ export default async function PonentesAdminPage() {
             fontWeight: 600,
           }}
         >
-          ⬇ Descargar CSV (Excel / Google Sheets)
+          ⬇ Descargar Excel
+        </a>
+        <a href="/api/admin/export?tipo=ponentes&formato=csv" style={{ fontSize: 13 }}>
+          o CSV
         </a>
       </p>
 

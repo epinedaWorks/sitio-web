@@ -19,7 +19,7 @@ export default async function InscritosAdminPage() {
         Total: {registrations.length} · Autorizan compartir datos con empresas: {compartenDatos}
       </p>
 
-      <p>
+      <p style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <a
           href="/api/admin/export?tipo=inscritos"
           style={{
@@ -32,7 +32,10 @@ export default async function InscritosAdminPage() {
             fontWeight: 600,
           }}
         >
-          ⬇ Descargar CSV (Excel / Google Sheets)
+          ⬇ Descargar Excel
+        </a>
+        <a href="/api/admin/export?tipo=inscritos&formato=csv" style={{ fontSize: 13 }}>
+          o CSV
         </a>
       </p>
 

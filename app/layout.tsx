@@ -1,13 +1,8 @@
 import "./globals.css";
 import type { Metadata } from "next";
-import Nav from "./components/Nav";
-import Footer from "./components/Footer";
-import ToTop from "./components/ToTop";
-import ClientEffects from "./components/ClientEffects";
-import RegistroModales from "./components/RegistroModales";
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://pythonguatemala.org"),
+  metadataBase: new URL("https://pythonguatemala.dev"),
   title: {
     default: "Comunidad Python Guatemala",
     template: "%s · Python Guatemala",
@@ -44,20 +39,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           rel="stylesheet"
         />
       </head>
-      <body>
-        <a className="skip-link" href="#contenido">Saltar al contenido</a>
-
-        <div className="aurora" aria-hidden="true"><span /><span /><span /></div>
-        <div className="grain" aria-hidden="true" />
-
-        <Nav />
-        <div id="contenido">{children}</div>
-        <Footer />
-
-        <ToTop />
-        <ClientEffects />
-        <RegistroModales />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

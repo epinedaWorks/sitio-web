@@ -1,13 +1,13 @@
 import { prisma } from "@/lib/prisma";
-import Hero from "./components/Hero";
-import Marquee from "./components/Marquee";
-import Comunidad from "./components/Comunidad";
-import Eventos from "./components/Eventos";
-import Apoyanos from "./components/Apoyanos";
-import Equipo from "./components/Equipo";
-import Conducta from "./components/Conducta";
-import Unete from "./components/Unete";
-import type { Album } from "./components/Albumes";
+import Hero from "../components/Hero";
+import Marquee from "../components/Marquee";
+import Comunidad from "../components/Comunidad";
+import Eventos from "../components/Eventos";
+import Apoyanos from "../components/Apoyanos";
+import Equipo from "../components/Equipo";
+import Conducta from "../components/Conducta";
+import Unete from "../components/Unete";
+import type { Album } from "../components/Albumes";
 
 // Refresca los álbumes cada hora sin necesidad de redeploy.
 export const revalidate = 3600;

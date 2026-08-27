@@ -10,8 +10,15 @@ export type Album = {
   images: AlbumFoto[];
 };
 
-const thumbOf = (url: string) =>
-  url.includes("/full/") ? url.replace("/full/", "/thumb/") : url;
+// Miniatura para la retícula:
+//  - fotos locales del seed: usan su versión /thumb/ ya generada
+//  - fotos subidas al panel (/api/img/...): las redimensiona el Image CDN de Netlify
+const thumbOf = (url: string) => {
+  if (url.includes("/full/")) return url.replace("/full/", "/thumb/");
+  if (url.startsWith("/api/img/"))
+    return `/.netlify/images?url=${encodeURIComponent(url)}&w=700&fit=cover&q=72`;
+  return url;
+};
 
 export default function Albumes({ albums }: { albums: Album[] }) {
   const [abierto, setAbierto] = useState<Album | null>(null);

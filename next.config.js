@@ -10,6 +10,8 @@ const nextConfig = {
         "admirable-dasik-afa3f0.netlify.app",
         "localhost:3000",
       ],
+      // Subida de varias fotos a la galería desde el panel.
+      bodySizeLimit: "40mb",
     },
   },
 };

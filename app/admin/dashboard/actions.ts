@@ -3,8 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
+import { getStore } from "@netlify/blobs";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/require-admin";
+
+const GALLERY_STORE = "gallery";
 
 // Cambia la contraseña del usuario admin que tiene la sesión activa.
 export async function cambiarPassword(formData: FormData) {
@@ -97,8 +100,18 @@ export async function agregarFoto(formData: FormData) {
 
 export async function eliminarFoto(imageId: string) {
   await requireAdminSession();
-  await prisma.galleryImage.delete({ where: { id: imageId } });
+  const img = await prisma.galleryImage.delete({ where: { id: imageId } });
+  // Si la foto era un archivo subido, borra también el blob.
+  const m = img.url.match(/^\/api\/img\/(.+)$/);
+  if (m) {
+    try {
+      await getStore({ name: GALLERY_STORE, consistency: "strong" }).delete(m[1]);
+    } catch {
+      /* si el almacenamiento no está disponible, al menos la fila ya se borró */
+    }
+  }
   revalidatePath("/admin/dashboard/galeria");
+  revalidatePath("/");
   revalidatePath("/eventos");
 }
 

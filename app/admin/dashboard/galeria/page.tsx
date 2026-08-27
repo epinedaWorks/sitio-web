@@ -1,6 +1,7 @@
 import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { crearAlbum, agregarFoto, eliminarFoto } from "../actions";
+import SubirFotos from "../SubirFotos";
 
 export default async function GaleriaAdminPage() {
   await requireAdminSession();
@@ -60,11 +61,13 @@ export default async function GaleriaAdminPage() {
             {album.images.length === 0 && <p style={{ opacity: 0.6, fontSize: 14 }}>Aún no hay fotos.</p>}
           </div>
 
+          <SubirFotos albumId={album.id} />
+
           <form action={agregarFoto} style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
             <input type="hidden" name="albumId" value={album.id} />
-            <input name="url" placeholder="URL de la imagen" required style={{ flex: 1, minWidth: 220 }} />
+            <input name="url" placeholder="…o pega una URL de imagen" required style={{ flex: 1, minWidth: 220 }} />
             <input name="caption" placeholder="Descripción (opcional)" />
-            <button type="submit">Agregar foto</button>
+            <button type="submit">Agregar por URL</button>
           </form>
         </section>
       ))}

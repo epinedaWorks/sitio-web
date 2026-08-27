@@ -28,11 +28,20 @@ async function enviar(opts: {
   subject: string;
   html: string;
   replyTo?: string | string[];
+  bcc?: string[]; // copia oculta extra para este envío (además de EMAIL_BCC)
 }) {
   if (!API_KEY) {
     sinConfig();
     return;
   }
+  // Junta la BCC global (EMAIL_BCC) con la de este envío, sin duplicar ni
+  // meter en CCO a alguien que ya está en el "Para".
+  const destinatarios = new Set(
+    (Array.isArray(opts.to) ? opts.to : [opts.to]).map((s) => s.toLowerCase())
+  );
+  const bcc = [...new Set([...BCC_LIST, ...(opts.bcc || [])])].filter(
+    (b) => !destinatarios.has(b.toLowerCase())
+  );
   try {
     const res = await fetch("https://api.resend.com/emails", {
       method: "POST",
@@ -46,7 +55,7 @@ async function enviar(opts: {
         subject: opts.subject,
         html: opts.html,
         ...(opts.replyTo && opts.replyTo.length ? { reply_to: opts.replyTo } : {}),
-        ...(BCC_LIST.length ? { bcc: BCC_LIST } : {}),
+        ...(bcc.length ? { bcc } : {}),
       }),
     });
     if (!res.ok) {
@@ -125,6 +134,7 @@ export async function sendRegistrationEmails(d: DatosInscripcion) {
        ])}`
     ),
     replyTo: TEAM_LIST[0],
+    bcc: TEAM_LIST, // el equipo recibe copia oculta de lo que se le manda a la persona
   });
 
   // Al equipo
@@ -192,6 +202,7 @@ export async function sendSpeakerEmails(d: DatosPonente) {
       )}</strong>. El equipo core la revisará y te escribirá a este correo.</p>`
     ),
     replyTo: TEAM_LIST[0],
+    bcc: TEAM_LIST, // el equipo recibe copia oculta de lo que se le manda a la persona
   });
 
   if (TEAM_LIST.length) {
@@ -271,5 +282,6 @@ export async function sendContactEmail(d: DatosContacto) {
       )}</strong>. Te responderemos a este correo lo antes posible.</p>`
     ),
     replyTo: TEAM_LIST[0],
+    bcc: TEAM_LIST, // el equipo recibe copia oculta de lo que se le manda a la persona
   });
 }

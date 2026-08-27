@@ -3,12 +3,34 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 
+const esHeic = (f: File) =>
+  /image\/hei[cf]/i.test(f.type) || /\.hei[cf]$/i.test(f.name);
+
+// Las .heic de iPhone no las muestran Chrome/Firefox: las convertimos a JPEG
+// aquí, en el navegador, antes de subir.
+async function deHeicAJpeg(file: File): Promise<Blob> {
+  const { default: heic2any } = await import("heic2any");
+  const salida = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.9 });
+  return Array.isArray(salida) ? salida[0] : salida;
+}
+
 // Redimensiona en el navegador antes de subir: fotos de teléfono de 4-8 MB
 // quedan en ~200-400 KB, así cada subida es rápida y ligera.
 async function comprimir(file: File, max = 1800, quality = 0.82): Promise<Blob> {
-  if (!file.type.startsWith("image/") || file.type === "image/gif") return file;
+  let fuente: Blob = file;
+  if (esHeic(file)) {
+    try {
+      fuente = await deHeicAJpeg(file);
+    } catch {
+      throw new Error("No se pudo convertir el HEIC");
+    }
+  } else if (!file.type.startsWith("image/") || file.type === "image/gif") {
+    return file;
+  }
+  // Nunca devolvemos el original si era HEIC (el servidor no lo acepta).
+  const respaldo: Blob = esHeic(file) ? fuente : file;
   try {
-    const bitmap = await createImageBitmap(file);
+    const bitmap = await createImageBitmap(fuente);
     const escala = Math.min(1, max / Math.max(bitmap.width, bitmap.height));
     const w = Math.round(bitmap.width * escala);
     const h = Math.round(bitmap.height * escala);
@@ -16,14 +38,14 @@ async function comprimir(file: File, max = 1800, quality = 0.82): Promise<Blob> 
     canvas.width = w;
     canvas.height = h;
     const ctx = canvas.getContext("2d");
-    if (!ctx) return file;
+    if (!ctx) return respaldo;
     ctx.drawImage(bitmap, 0, 0, w, h);
     const blob: Blob | null = await new Promise((res) =>
       canvas.toBlob((b) => res(b), "image/jpeg", quality)
     );
-    return blob && blob.size < file.size ? blob : file;
+    return blob && blob.size < respaldo.size ? blob : respaldo;
   } catch {
-    return file;
+    return respaldo;
   }
 }
 
@@ -36,7 +58,9 @@ export default function SubirFotos({ albumId }: { albumId: string }) {
   const [arrastrando, setArrastrando] = useState(false);
 
   function agregar(lista: FileList | File[]) {
-    const nuevas = Array.from(lista).filter((f) => f.type.startsWith("image/"));
+    const nuevas = Array.from(lista).filter(
+      (f) => f.type.startsWith("image/") || esHeic(f)
+    );
     if (nuevas.length) setSeleccion((prev) => [...prev, ...nuevas]);
   }
 
@@ -59,8 +83,9 @@ export default function SubirFotos({ albumId }: { albumId: string }) {
           const d = await r.json().catch(() => ({}));
           setEstado(`Error en "${seleccion[i].name}": ${d.error || r.status}`);
         }
-      } catch {
-        setEstado(`Error subiendo "${seleccion[i].name}"`);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : "";
+        setEstado(`Error subiendo "${seleccion[i].name}"${msg ? `: ${msg}` : ""}`);
       }
     }
     const total = seleccion.length;
@@ -102,7 +127,7 @@ export default function SubirFotos({ albumId }: { albumId: string }) {
         <input
           ref={inputRef}
           type="file"
-          accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+          accept="image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif,.heic,.heif"
           multiple
           hidden
           disabled={subiendo}
@@ -135,7 +160,8 @@ export default function SubirFotos({ albumId }: { albumId: string }) {
 
       {estado && <p style={{ fontSize: 13, marginTop: 6 }}>{estado}</p>}
       <p style={{ fontSize: 12, opacity: 0.65, marginTop: 4 }}>
-        Se reducen de tamaño automáticamente antes de subir. Formatos: JPG, PNG, WebP, GIF, AVIF.
+        Se reducen de tamaño automáticamente antes de subir. Formatos: JPG, PNG, WebP, GIF, AVIF y
+        HEIC (de iPhone — se convierte a JPG solo).
       </p>
     </div>
   );

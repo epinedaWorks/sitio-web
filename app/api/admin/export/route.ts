@@ -12,8 +12,8 @@ export async function GET(req: Request) {
   const tipo = url.searchParams.get("tipo");
   const formato = url.searchParams.get("formato") === "csv" ? "csv" : "xlsx";
 
-  if (tipo !== "inscritos" && tipo !== "ponentes") {
-    return new Response("Parámetro 'tipo' debe ser 'inscritos' o 'ponentes'", { status: 400 });
+  if (tipo !== "inscritos" && tipo !== "ponentes" && tipo !== "contacto") {
+    return new Response("Parámetro 'tipo' inválido", { status: 400 });
   }
 
   const fmt = (d: Date) => d.toLocaleString("es-GT");
@@ -34,6 +34,13 @@ export async function GET(req: Request) {
       r.nombre, r.correo, r.telefono, r.asistira, r.rol, r.universidad, r.semestre,
       r.experiencia, r.comoSeEntero, r.comentarios,
       r.compartirDatos ? "Sí" : "No", r.event.title, fmt(r.createdAt),
+    ]);
+  } else if (tipo === "contacto") {
+    const data = await prisma.contactMessage.findMany({ orderBy: { createdAt: "desc" } });
+    headers = ["Nombre", "Correo", "Organización", "Asunto", "Mensaje", "Atendido", "Fecha"];
+    rows = data.map((m) => [
+      m.nombre, m.correo, m.organizacion, m.asunto, m.mensaje,
+      m.atendido ? "Sí" : "No", fmt(m.createdAt),
     ]);
   } else {
     const data = await prisma.speakerSubmission.findMany({
@@ -80,9 +87,9 @@ export async function GET(req: Request) {
   const wb = new ExcelJS.Workbook();
   wb.creator = "Python Guatemala";
   wb.created = new Date();
-  const ws = wb.addWorksheet(tipo === "inscritos" ? "Inscritos" : "Ponentes", {
-    views: [{ state: "frozen", ySplit: 1 }],
-  });
+  const hoja =
+    tipo === "inscritos" ? "Inscritos" : tipo === "contacto" ? "Contacto" : "Ponentes";
+  const ws = wb.addWorksheet(hoja, { views: [{ state: "frozen", ySplit: 1 }] });
 
   ws.addRow(headers);
   const head = ws.getRow(1);

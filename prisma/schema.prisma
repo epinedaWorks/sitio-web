@@ -128,6 +128,18 @@ enum SubmissionStatus {
   RECHAZADA
 }
 
+// Mensajes del formulario de contacto (patrocinio, prensa, más información…)
+model ContactMessage {
+  id           String   @id @default(cuid())
+  nombre       String
+  correo       String
+  organizacion String?
+  asunto       String   // "Patrocinio" | "Más información" | "Prensa" | "Colaboración" | "Otro"
+  mensaje      String
+  atendido     Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
 // Foto individual dentro de un álbum
 model GalleryImage {
   id        String   @id @default(cuid())

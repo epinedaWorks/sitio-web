@@ -128,10 +128,43 @@ export async function actualizarEstadoPonente(
   revalidatePath("/admin/dashboard/ponentes");
 }
 
+// Mueve una foto una posición arriba o abajo dentro de su álbum.
+export async function moverFoto(id: string, dir: "arriba" | "abajo") {
+  await requireAdminSession();
+  const foto = await prisma.galleryImage.findUnique({ where: { id } });
+  if (!foto) return;
+  const vecino = await prisma.galleryImage.findFirst({
+    where: {
+      albumId: foto.albumId,
+      order: dir === "arriba" ? { lt: foto.order } : { gt: foto.order },
+    },
+    orderBy: { order: dir === "arriba" ? "desc" : "asc" },
+  });
+  if (!vecino) return;
+  await prisma.$transaction([
+    prisma.galleryImage.update({ where: { id: foto.id }, data: { order: vecino.order } }),
+    prisma.galleryImage.update({ where: { id: vecino.id }, data: { order: foto.order } }),
+  ]);
+  revalidatePath("/admin/dashboard/galeria");
+  revalidatePath("/");
+}
+
 export async function eliminarInscrito(id: string) {
   await requireAdminSession();
   await prisma.attendeeRegistration.delete({ where: { id } });
   revalidatePath("/admin/dashboard/inscritos");
+}
+
+export async function eliminarContacto(id: string) {
+  await requireAdminSession();
+  await prisma.contactMessage.delete({ where: { id } });
+  revalidatePath("/admin/dashboard/contacto");
+}
+
+export async function marcarContacto(id: string, atendido: boolean) {
+  await requireAdminSession();
+  await prisma.contactMessage.update({ where: { id }, data: { atendido } });
+  revalidatePath("/admin/dashboard/contacto");
 }
 
 export async function eliminarPonente(id: string) {

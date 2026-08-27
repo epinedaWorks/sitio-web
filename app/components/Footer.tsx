@@ -27,7 +27,7 @@ export default function Footer() {
           <div className="foot-col">
             <h5>Explorar</h5>
             {NAV_LINKS.filter((l) => l.href !== "#unete").map((l) => (
-              <a key={l.href} href={l.href}>
+              <a key={l.label} href={l.href} className={l.contacto ? "js-contacto" : undefined}>
                 {l.label}
               </a>
             ))}

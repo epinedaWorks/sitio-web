@@ -6,6 +6,11 @@ const TEAM_LIST = (process.env.TEAM_EMAIL || "")
   .map((s) => s.trim())
   .filter(Boolean); // correo(s) del equipo
 const ADMIN_URL = process.env.ADMIN_URL || "http://localhost:3000/admin/dashboard";
+// Copia oculta (BCC) para archivar todos los correos salientes. Opcional.
+const BCC_LIST = (process.env.EMAIL_BCC || "")
+  .split(",")
+  .map((s) => s.trim())
+  .filter(Boolean);
 
 let avisado = false;
 function sinConfig() {
@@ -41,6 +46,7 @@ async function enviar(opts: {
         subject: opts.subject,
         html: opts.html,
         ...(opts.replyTo && opts.replyTo.length ? { reply_to: opts.replyTo } : {}),
+        ...(BCC_LIST.length ? { bcc: BCC_LIST } : {}),
       }),
     });
     if (!res.ok) {
@@ -221,4 +227,49 @@ export async function sendSpeakerEmails(d: DatosPonente) {
       replyTo: d.correo,
     });
   }
+}
+
+// ---------- Formulario de contacto ----------
+export type DatosContacto = {
+  nombre: string;
+  correo: string;
+  organizacion?: string | null;
+  asunto: string;
+  mensaje: string;
+};
+
+export async function sendContactEmail(d: DatosContacto) {
+  // Aviso al equipo
+  if (TEAM_LIST.length) {
+    await enviar({
+      to: TEAM_LIST,
+      subject: `Contacto (${d.asunto}): ${d.nombre}`,
+      html: layout(
+        `Nuevo mensaje de contacto · ${esc(d.asunto)}`,
+        `${filas([
+          ["Nombre", d.nombre],
+          ["Correo", d.correo],
+          ["Organización", d.organizacion],
+          ["Asunto", d.asunto],
+        ])}
+        <p style="font-size:13px;color:#666;margin-top:12px">Mensaje:</p>
+        <p style="font-size:14px;line-height:1.6;white-space:pre-wrap">${esc(d.mensaje)}</p>
+        <p style="margin-top:16px"><a href="${ADMIN_URL}/contacto" style="color:#159d68">Ver en el panel →</a></p>`
+      ),
+      replyTo: d.correo,
+    });
+  }
+
+  // Acuse al remitente
+  await enviar({
+    to: d.correo,
+    subject: "Recibimos tu mensaje · Python Guatemala",
+    html: layout(
+      `¡Gracias por escribirnos, ${esc(d.nombre.split(" ")[0])}!`,
+      `<p style="font-size:14px;line-height:1.6">Recibimos tu mensaje sobre <strong>${esc(
+        d.asunto
+      )}</strong>. Te responderemos a este correo lo antes posible.</p>`
+    ),
+    replyTo: TEAM_LIST[0],
+  });
 }

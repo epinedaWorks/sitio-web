@@ -32,7 +32,12 @@ export default function Nav() {
 
         <nav className={`nav-links${open ? " open" : ""}`} id="navLinks">
           {NAV_LINKS.map((l) => (
-            <a key={l.href} href={l.href} onClick={() => setOpen(false)}>
+            <a
+              key={l.label}
+              href={l.href}
+              className={l.contacto ? "js-contacto" : undefined}
+              onClick={() => setOpen(false)}
+            >
               {l.label}
             </a>
           ))}

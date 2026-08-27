@@ -33,7 +33,7 @@ export default function Apoyanos() {
               <li>🌱 <b>Proyección social</b> — apoyo al desarrollo tecnológico y educativo del país.</li>
               <li>🔗 <b>Networking</b> — contacto con líderes, expertos y futuros colaboradores.</li>
             </ul>
-            <a className="btn btn-primary" href="#unete">
+            <a className="btn btn-primary js-contacto" href="#apoyanos">
               Conviértete en aliado →
             </a>
           </div>

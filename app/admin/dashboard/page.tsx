@@ -5,11 +5,12 @@ import { prisma } from "@/lib/prisma";
 export default async function DashboardHome() {
   const session = await requireAdminSession();
 
-  const [eventos, ponentes, inscritos, albumes] = await Promise.all([
+  const [eventos, ponentes, inscritos, albumes, contacto] = await Promise.all([
     prisma.event.count(),
     prisma.speakerSubmission.count({ where: { status: "PENDIENTE" } }),
     prisma.attendeeRegistration.count(),
     prisma.album.count(),
+    prisma.contactMessage.count({ where: { atendido: false } }),
   ]);
 
   return (
@@ -22,6 +23,7 @@ export default async function DashboardHome() {
         <Card href="/admin/dashboard/galeria" title="Álbumes de fotos" value={albumes} desc="Gestionar galerías por actividad" />
         <Card href="/admin/dashboard/ponentes" title="Postulaciones pendientes" value={ponentes} desc="Revisar y aprobar ponentes" />
         <Card href="/admin/dashboard/inscritos" title="Inscritos" value={inscritos} desc="Ver y exportar participantes" />
+        <Card href="/admin/dashboard/contacto" title="Contacto sin atender" value={contacto} desc="Patrocinio, prensa, más información" />
       </div>
 
       <p style={{ marginTop: 24 }}>

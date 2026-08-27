@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { EVENT_SLUG } from "../site-data";
 
-type Modo = null | "inscripcion" | "ponente";
+type Modo = null | "inscripcion" | "ponente" | "contacto";
 type Estado = "idle" | "enviando" | "ok";
 
 export default function RegistroModales() {
@@ -31,26 +31,24 @@ export default function RegistroModales() {
     toastTimer.current = setTimeout(() => setToast(null), 5000);
   }, []);
 
-  // Conecta los botones .js-inscribir / .js-ponente que ya viven en el HTML
+  // Conecta los botones .js-inscribir / .js-ponente / .js-contacto del HTML
   useEffect(() => {
-    const inscribir = Array.from(document.querySelectorAll<HTMLElement>(".js-inscribir"));
-    const ponente = Array.from(document.querySelectorAll<HTMLElement>(".js-ponente"));
-
-    const onInscribir = (e: Event) => {
-      e.preventDefault();
-      abrir("inscripcion");
-    };
-    const onPonente = (e: Event) => {
-      e.preventDefault();
-      abrir("ponente");
-    };
-
-    inscribir.forEach((el) => el.addEventListener("click", onInscribir));
-    ponente.forEach((el) => el.addEventListener("click", onPonente));
-    return () => {
-      inscribir.forEach((el) => el.removeEventListener("click", onInscribir));
-      ponente.forEach((el) => el.removeEventListener("click", onPonente));
-    };
+    const grupos: [string, Exclude<Modo, null>][] = [
+      [".js-inscribir", "inscripcion"],
+      [".js-ponente", "ponente"],
+      [".js-contacto", "contacto"],
+    ];
+    const limpiar: (() => void)[] = [];
+    grupos.forEach(([sel, m]) => {
+      const els = Array.from(document.querySelectorAll<HTMLElement>(sel));
+      const fn = (e: Event) => {
+        e.preventDefault();
+        abrir(m);
+      };
+      els.forEach((el) => el.addEventListener("click", fn));
+      limpiar.push(() => els.forEach((el) => el.removeEventListener("click", fn)));
+    });
+    return () => limpiar.forEach((f) => f());
   }, [abrir]);
 
   // Escape + bloqueo de scroll mientras el modal está abierto
@@ -154,12 +152,45 @@ export default function RegistroModales() {
     }
   }
 
+  async function enviarContacto(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setEstado("enviando");
+    setError("");
+    const f = new FormData(e.currentTarget);
+    try {
+      const res = await fetch("/api/contacto", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre_web: f.get("nombre_web"),
+          nombre: f.get("nombre"),
+          correo: f.get("correo"),
+          organizacion: f.get("organizacion"),
+          asunto: f.get("asunto"),
+          mensaje: f.get("mensaje"),
+        }),
+      });
+      if (res.ok) {
+        setEstado("ok");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "No se pudo enviar el mensaje.");
+        setEstado("idle");
+      }
+    } catch {
+      setError("Sin conexión. Intenta de nuevo.");
+      setEstado("idle");
+    }
+  }
+
   function cerrarConToast() {
     if (estado === "ok") {
       lanzarToast(
         modo === "inscripcion"
           ? "¡Inscripción confirmada! Te esperamos en el Python eXposition Day 2026."
-          : "¡Propuesta recibida! El equipo core te escribirá pronto."
+          : modo === "ponente"
+            ? "¡Propuesta recibida! El equipo core te escribirá pronto."
+            : "¡Mensaje enviado! Te responderemos a tu correo."
       );
     }
     cerrar();
@@ -173,11 +204,19 @@ export default function RegistroModales() {
             {estado === "ok" ? (
               <div className="modal-done">
                 <div className="big">🎉</div>
-                <h3>{modo === "inscripcion" ? "¡Listo, quedaste inscrito!" : "¡Gracias por postularte!"}</h3>
+                <h3>
+                  {modo === "inscripcion"
+                    ? "¡Listo, quedaste inscrito!"
+                    : modo === "ponente"
+                      ? "¡Gracias por postularte!"
+                      : "¡Mensaje enviado!"}
+                </h3>
                 <p>
                   {modo === "inscripcion"
                     ? "Te esperamos el sábado 3 de octubre de 2026 en la UVG."
-                    : "El equipo core revisará tu propuesta y te escribirá a tu correo."}
+                    : modo === "ponente"
+                      ? "El equipo core revisará tu propuesta y te escribirá a tu correo."
+                      : "Recibimos tu mensaje. Te responderemos a tu correo lo antes posible."}
                 </p>
                 <button className="btn btn-primary" onClick={cerrarConToast}>
                   Cerrar
@@ -187,11 +226,19 @@ export default function RegistroModales() {
               <>
                 <div className="modal-head">
                   <div>
-                    <h3>{modo === "inscripcion" ? "Inscríbete al Python eXposition Day 2026" : "Sé parte del Python eXposition Day 2026"}</h3>
+                    <h3>
+                      {modo === "inscripcion"
+                        ? "Inscríbete al Python eXposition Day 2026"
+                        : modo === "ponente"
+                          ? "Sé parte del Python eXposition Day 2026"
+                          : "Contáctanos"}
+                    </h3>
                     <p>
                       {modo === "inscripcion"
                         ? "Entrada gratuita · cupo limitado · sábado 3 de octubre · UVG"
-                        : "Charla, taller o exposición de proyecto. Cuéntanos tu idea."}
+                        : modo === "ponente"
+                          ? "Charla, taller o exposición de proyecto. Cuéntanos tu idea."
+                          : "¿Quieres patrocinar, colaborar o pedir más información? Escríbenos."}
                     </p>
                   </div>
                   <button className="modal-close" aria-label="Cerrar" onClick={cerrarConToast}>
@@ -325,7 +372,7 @@ export default function RegistroModales() {
                       </button>
                     </div>
                   </form>
-                ) : (
+                ) : modo === "ponente" ? (
                   <form className="form-grid" onSubmit={enviarPonente}>
                     <input
                       type="text"
@@ -522,6 +569,60 @@ export default function RegistroModales() {
                     <div className="form-actions">
                       <button className="btn btn-primary" type="submit" disabled={estado === "enviando"}>
                         {estado === "enviando" ? "Enviando…" : "Enviar postulación"}
+                      </button>
+                    </div>
+                  </form>
+                ) : (
+                  <form className="form-grid" onSubmit={enviarContacto}>
+                    <input
+                      type="text"
+                      name="nombre_web"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      aria-hidden="true"
+                      style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+                    />
+                    <div className="form-field">
+                      <label htmlFor="c-nombre">Nombre *</label>
+                      <input id="c-nombre" name="nombre" required autoFocus />
+                    </div>
+                    <div className="form-row">
+                      <div className="form-field">
+                        <label htmlFor="c-correo">Correo *</label>
+                        <input id="c-correo" name="correo" type="email" required />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="c-org">Organización / empresa</label>
+                        <input id="c-org" name="organizacion" placeholder="Opcional" />
+                      </div>
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="c-asunto">¿Sobre qué nos escribes? *</label>
+                      <select id="c-asunto" name="asunto" required defaultValue="">
+                        <option value="" disabled>
+                          Elige un tema
+                        </option>
+                        <option value="Patrocinio">Patrocinio</option>
+                        <option value="Más información">Más información</option>
+                        <option value="Colaboración">Colaboración</option>
+                        <option value="Prensa">Prensa</option>
+                        <option value="Otro">Otro</option>
+                      </select>
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="c-msg">Mensaje *</label>
+                      <textarea
+                        id="c-msg"
+                        name="mensaje"
+                        rows={4}
+                        required
+                        placeholder="Cuéntanos brevemente qué necesitas."
+                      />
+                    </div>
+                    {error && <p className="form-error">{error}</p>}
+                    <div className="form-actions">
+                      <button className="btn btn-primary" type="submit" disabled={estado === "enviando"}>
+                        {estado === "enviando" ? "Enviando…" : "Enviar mensaje"}
                       </button>
                     </div>
                   </form>

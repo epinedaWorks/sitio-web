@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 
 // Sube UNA foto a un álbum. El cliente (SubirFotos.tsx) llama a este endpoint
 // una vez por archivo, así cada petición es pequeña y no choca con límites.
+// Solo formatos rasterizados: nada de SVG (puede contener <script>).
 const EXT: Record<string, string> = {
   "image/jpeg": ".jpg",
   "image/png": ".png",
@@ -24,8 +25,11 @@ export async function POST(req: Request) {
   if (!albumId || !(file instanceof File) || file.size === 0) {
     return Response.json({ error: "Falta el álbum o el archivo" }, { status: 400 });
   }
-  if (!file.type.startsWith("image/")) {
-    return Response.json({ error: "El archivo no es una imagen" }, { status: 400 });
+  if (!EXT[file.type]) {
+    return Response.json(
+      { error: "Formato no permitido. Usa JPG, PNG, WebP, GIF o AVIF." },
+      { status: 400 }
+    );
   }
   if (file.size > 10 * 1024 * 1024) {
     return Response.json({ error: "La imagen supera 10 MB" }, { status: 413 });

@@ -9,6 +9,8 @@ function str(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
 }
 
+const ES_CORREO = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) && s.length <= 254;
+
 // Recibe la postulación del formulario público y la guarda en la base de datos.
 // El equipo core la revisa luego desde /admin/dashboard/ponentes.
 export async function POST(req: Request) {
@@ -43,6 +45,13 @@ export async function POST(req: Request) {
       !eventSlug
     ) {
       return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
+    }
+    if (!ES_CORREO(correo)) {
+      return NextResponse.json({ error: "El correo no es válido" }, { status: 400 });
+    }
+    // Topes de longitud: evita que llenen la base / los correos con texto enorme.
+    if (nombre.length > 200 || tema.length > 300 || descripcion.length > 8000 || bio.length > 4000) {
+      return NextResponse.json({ error: "Algún campo es demasiado largo" }, { status: 400 });
     }
 
     // Debe seguir a la comunidad para que la propuesta sea considerada

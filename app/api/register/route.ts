@@ -6,6 +6,8 @@ function str(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
 }
 
+const ES_CORREO = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) && s.length <= 254;
+
 // Inscripción pública de un asistente a un evento.
 export async function POST(req: Request) {
   try {
@@ -22,6 +24,12 @@ export async function POST(req: Request) {
 
     if (!nombre || !correo || !asistira || !rol || !eventSlug) {
       return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
+    }
+    if (!ES_CORREO(correo)) {
+      return NextResponse.json({ error: "El correo no es válido" }, { status: 400 });
+    }
+    if (nombre.length > 200) {
+      return NextResponse.json({ error: "Nombre demasiado largo" }, { status: 400 });
     }
 
     const event = await prisma.event.findUnique({ where: { slug: eventSlug } });

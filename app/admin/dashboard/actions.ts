@@ -87,10 +87,11 @@ export async function agregarFoto(formData: FormData) {
   await requireAdminSession();
 
   const albumId = String(formData.get("albumId") || "");
-  const url = String(formData.get("url") || "");
+  const url = String(formData.get("url") || "").trim();
   const caption = String(formData.get("caption") || "");
 
-  if (!albumId || !url) return;
+  // Solo http(s) o rutas del propio sitio: nada de javascript:/data: etc.
+  if (!albumId || !/^(https?:\/\/|\/)/i.test(url)) return;
 
   await prisma.galleryImage.create({ data: { albumId, url, caption } });
 

@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { revalidatePath } from "next/cache";
 import { getStore } from "@netlify/blobs";
 import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
@@ -45,6 +46,8 @@ export async function POST(req: Request) {
     const img = await prisma.galleryImage.create({
       data: { albumId, url: `/api/img/${key}`, order: album._count.images },
     });
+    revalidatePath("/");
+    revalidatePath("/admin/dashboard/galeria");
     return Response.json({ ok: true, id: img.id, url: img.url });
   } catch (e) {
     console.error("[upload]", e);

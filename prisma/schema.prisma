@@ -1,0 +1,139 @@
+// Esquema de base de datos de Python Guatemala
+// Docs: https://www.prisma.io/docs
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Usuario del equipo core con acceso al panel admin
+model AdminUser {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  role         Role     @default(EDITOR)
+  createdAt    DateTime @default(now())
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+}
+
+// Evento (ej. XPDay 2026)
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  date        DateTime
+  location    String
+  description String
+  published   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  speakerSubmissions SpeakerSubmission[]
+  albums             Album[]
+  registrations      AttendeeRegistration[]
+}
+
+// Inscripción de un participante/asistente a un evento
+model AttendeeRegistration {
+  id           String   @id @default(cuid())
+  nombre       String
+  correo       String
+  telefono     String?
+  asistira     String?  // "Sí" | "No" | "Tal vez"
+  rol          String?  // Estudiante, Desarrollador(a), etc. (permite valor libre)
+  universidad  String?  // solo si es estudiante
+  semestre     String?  // solo si es estudiante
+  experiencia  String?  // Principiante | Intermedio | Avanzado
+  comoSeEntero String?
+  comentarios  String?
+  compartirDatos Boolean @default(false) // autoriza compartir contacto con empresas aliadas
+  createdAt    DateTime @default(now())
+
+  event   Event  @relation(fields: [eventId], references: [id])
+  eventId String
+
+  @@unique([eventId, correo]) // evita que la misma persona se inscriba dos veces al mismo evento
+}
+
+// Álbum de fotos de una actividad específica dentro de un evento
+// (ej. "Charlas", "Talleres", "Networking" del XPDay 2026)
+model Album {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  createdAt   DateTime @default(now())
+
+  event   Event  @relation(fields: [eventId], references: [id])
+  eventId String
+
+  images GalleryImage[]
+}
+
+// Postulación del formulario de ponente
+model SpeakerSubmission {
+  id           String            @id @default(cuid())
+  nombre       String
+  correo       String
+  telefono     String?
+  modalidad    SpeakerModalidad
+  tema         String
+  descripcion  String
+  experiencia  String?           // en desuso: reemplazado por `bio`
+  nivel        SpeakerNivel?     // dificultad de la propuesta
+  bio          String?           // "Acerca de ti" — aparece al publicar en redes
+  sigueComunidad Boolean?        // ¿ya sigue a la comunidad en redes?
+  linkedin     String?
+  instagram    String?
+  empresa      String?
+  cargo        String?
+  edad         Int?
+  fotoUrl      String?           // URL de foto (si es seleccionado)
+  pais         String?           // "No" si es local, o país de origen
+  comoSeEntero String?           // ¿cómo se enteró del evento?
+  comentarios  String?
+  compartirDatos Boolean         @default(false) // autoriza compartir contacto con empresas aliadas
+  status       SubmissionStatus  @default(PENDIENTE)
+  createdAt    DateTime          @default(now())
+
+  event   Event  @relation(fields: [eventId], references: [id])
+  eventId String
+}
+
+enum SpeakerModalidad {
+  CHARLA
+  TALLER
+  PROYECTO
+}
+
+enum SpeakerNivel {
+  BASICO
+  INTERMEDIO
+  AVANZADO
+}
+
+enum SubmissionStatus {
+  PENDIENTE
+  ACEPTADA
+  RECHAZADA
+}
+
+// Foto individual dentro de un álbum
+model GalleryImage {
+  id        String   @id @default(cuid())
+  url       String
+  caption   String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  album   Album  @relation(fields: [albumId], references: [id])
+  albumId String
+}

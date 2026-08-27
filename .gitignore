@@ -1,0 +1,12 @@
+node_modules
+.next
+.netlify
+out
+
+# Entorno: nunca subir credenciales
+.env
+.env.local
+.env.*.local
+
+*.log
+.DS_Store

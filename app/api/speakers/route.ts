@@ -77,6 +77,8 @@ export async function POST(req: Request) {
         pais: str(body.pais) || null,
         comoSeEntero: str(body.comoSeEntero) || null,
         comentarios: str(body.comentarios) || null,
+        integrantes: str(body.integrantes) || null,
+        necesidades: str(body.necesidades) || null,
         compartirDatos: body.compartirDatos === true,
         eventId: event.id,
       },

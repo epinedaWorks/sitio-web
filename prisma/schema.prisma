@@ -100,6 +100,8 @@ model SpeakerSubmission {
   pais         String?           // "No" si es local, o país de origen
   comoSeEntero String?           // ¿cómo se enteró del evento?
   comentarios  String?
+  integrantes  String?           // solo PROYECTO: demás miembros del equipo (nombre y carné)
+  necesidades  String?           // solo TALLER/PROYECTO: regletas, mesas, más espacio, etc.
   compartirDatos Boolean         @default(false) // autoriza compartir contacto con empresas aliadas
   status       SubmissionStatus  @default(PENDIENTE)
   createdAt    DateTime          @default(now())

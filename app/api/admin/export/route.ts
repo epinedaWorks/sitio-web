@@ -37,12 +37,14 @@ export async function GET(req: Request) {
     });
     headers = [
       "Nombre", "Correo", "Teléfono", "Modalidad", "Tema", "Descripción", "Nivel", "Bio",
+      "Integrantes del equipo", "Necesidades / logística",
       "¿Sigue a la comunidad?", "LinkedIn", "Instagram", "Empresa", "Cargo", "Edad",
       "Foto (URL)", "¿De otro país?", "¿Cómo se enteró?", "Comentarios",
       "Autoriza compartir datos", "Estado", "Evento", "Fecha",
     ];
     rows = data.map((s) => [
       s.nombre, s.correo, s.telefono, s.modalidad, s.tema, s.descripcion, s.nivel, s.bio,
+      s.integrantes, s.necesidades,
       s.sigueComunidad == null ? "" : s.sigueComunidad ? "Sí" : "No",
       s.linkedin, s.instagram, s.empresa, s.cargo, s.edad,
       s.fotoUrl, s.pais, s.comoSeEntero, s.comentarios,

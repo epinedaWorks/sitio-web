@@ -11,6 +11,7 @@ export default function RegistroModales() {
   const [estado, setEstado] = useState<Estado>("idle");
   const [error, setError] = useState("");
   const [rolAsistente, setRolAsistente] = useState("");
+  const [modalidadPonente, setModalidadPonente] = useState("");
   const [toast, setToast] = useState<{ msg: string; err?: boolean } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -18,6 +19,7 @@ export default function RegistroModales() {
     setEstado("idle");
     setError("");
     setRolAsistente("");
+    setModalidadPonente("");
     setModo(m);
   }, []);
 
@@ -131,6 +133,8 @@ export default function RegistroModales() {
           pais: f.get("pais"),
           comoSeEntero: f.get("comoSeEntero"),
           comentarios: f.get("comentarios"),
+          integrantes: f.get("integrantes"),
+          necesidades: f.get("necesidades"),
           compartirDatos: f.get("compartirDatos") === "on",
           eventSlug: EVENT_SLUG,
         }),
@@ -352,7 +356,13 @@ export default function RegistroModales() {
                     <div className="form-section">Tu propuesta</div>
                     <div className="form-field">
                       <label htmlFor="p-mod">¿Cómo quieres participar? *</label>
-                      <select id="p-mod" name="modalidad" required defaultValue="">
+                      <select
+                        id="p-mod"
+                        name="modalidad"
+                        required
+                        defaultValue=""
+                        onChange={(e) => setModalidadPonente(e.target.value)}
+                      >
                         <option value="" disabled>
                           Elige una modalidad
                         </option>
@@ -402,6 +412,32 @@ export default function RegistroModales() {
                         placeholder="Una bio corta: quién eres, lo que te apasiona y por qué quieres participar. Aparecerá al publicarte en redes."
                       />
                     </div>
+
+                    {modalidadPonente === "PROYECTO" && (
+                      <div className="form-field">
+                        <label htmlFor="p-integrantes">¿El proyecto es en grupo? Integrantes</label>
+                        <textarea
+                          id="p-integrantes"
+                          name="integrantes"
+                          rows={3}
+                          placeholder="Si lo exponen varias personas, escribe el nombre y carné de cada integrante (una por línea). Déjalo vacío si es individual."
+                        />
+                      </div>
+                    )}
+
+                    {(modalidadPonente === "TALLER" || modalidadPonente === "PROYECTO") && (
+                      <div className="form-field">
+                        <label htmlFor="p-necesidades">
+                          ¿Necesitan algo especial para el {modalidadPonente === "TALLER" ? "taller" : "montaje"}?
+                        </label>
+                        <textarea
+                          id="p-necesidades"
+                          name="necesidades"
+                          rows={2}
+                          placeholder="Regletas / tomas de corriente, mesas, más espacio, proyector, pizarra, internet, etc. (opcional)"
+                        />
+                      </div>
+                    )}
 
                     <div className="form-section">Redes y contacto</div>
                     <div className="form-field">

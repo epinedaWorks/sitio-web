@@ -21,8 +21,12 @@ export default async function DashboardHome() {
         <Card href="/admin/dashboard/eventos" title="Eventos" value={eventos} desc="Crear y publicar eventos" />
         <Card href="/admin/dashboard/galeria" title="Álbumes de fotos" value={albumes} desc="Gestionar galerías por actividad" />
         <Card href="/admin/dashboard/ponentes" title="Postulaciones pendientes" value={ponentes} desc="Revisar y aprobar ponentes" />
-        <Card href="/admin/dashboard/inscritos" title="Inscritos" value={inscritos} desc="Ver participantes registrados" />
+        <Card href="/admin/dashboard/inscritos" title="Inscritos" value={inscritos} desc="Ver y exportar participantes" />
       </div>
+
+      <p style={{ marginTop: 24 }}>
+        <Link href="/admin/dashboard/cuenta">🔑 Mi cuenta · cambiar contraseña</Link>
+      </p>
     </main>
   );
 }

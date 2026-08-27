@@ -1,5 +1,7 @@
 import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { eliminarInscrito } from "../actions";
+import ConfirmDelete from "../ConfirmDelete";
 
 export default async function InscritosAdminPage() {
   await requireAdminSession();
@@ -17,6 +19,23 @@ export default async function InscritosAdminPage() {
         Total: {registrations.length} · Autorizan compartir datos con empresas: {compartenDatos}
       </p>
 
+      <p>
+        <a
+          href="/api/admin/export?tipo=inscritos"
+          style={{
+            display: "inline-block",
+            padding: "8px 14px",
+            background: "#159d68",
+            color: "#fff",
+            borderRadius: 8,
+            textDecoration: "none",
+            fontWeight: 600,
+          }}
+        >
+          ⬇ Descargar CSV (Excel / Google Sheets)
+        </a>
+      </p>
+
       {registrations.length === 0 && <p>Aún no hay inscritos.</p>}
 
       {registrations.map((r) => (
@@ -24,7 +43,7 @@ export default async function InscritosAdminPage() {
           <summary style={{ cursor: "pointer", fontWeight: 600 }}>
             {r.nombre} · <span style={{ opacity: 0.7 }}>{r.correo}</span> · {r.asistira || "—"}
             {r.compartirDatos && (
-              <span style={{ fontSize: 12, marginLeft: 8, padding: "2px 8px", borderRadius: 999, background: "#d5f5e3" }}>
+              <span style={{ fontSize: 12, marginLeft: 8, padding: "2px 8px", borderRadius: 999, background: "#d5f5e3", color: "#1b5e20" }}>
                 comparte datos
               </span>
             )}
@@ -43,6 +62,13 @@ export default async function InscritosAdminPage() {
             <Field k="Evento" v={r.event.title} />
             <Field k="Fecha de inscripción" v={r.createdAt.toLocaleString("es-GT")} />
           </dl>
+          <ConfirmDelete
+            mensaje={`¿Borrar la inscripción de ${r.nombre}? Esta acción no se puede deshacer.`}
+            action={async () => {
+              "use server";
+              await eliminarInscrito(r.id);
+            }}
+          />
         </details>
       ))}
     </main>

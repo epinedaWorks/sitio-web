@@ -1,6 +1,7 @@
 import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
-import { actualizarEstadoPonente } from "../actions";
+import { actualizarEstadoPonente, eliminarPonente } from "../actions";
+import ConfirmDelete from "../ConfirmDelete";
 
 export default async function PonentesAdminPage() {
   await requireAdminSession();
@@ -13,6 +14,23 @@ export default async function PonentesAdminPage() {
     <main style={{ maxWidth: 1000, margin: "40px auto", fontFamily: "sans-serif" }}>
       <h1>Postulaciones de ponentes</h1>
       <p style={{ opacity: 0.7 }}>{submissions.length} en total. Haz clic en una para ver todos los datos.</p>
+
+      <p>
+        <a
+          href="/api/admin/export?tipo=ponentes"
+          style={{
+            display: "inline-block",
+            padding: "8px 14px",
+            background: "#159d68",
+            color: "#fff",
+            borderRadius: 8,
+            textDecoration: "none",
+            fontWeight: 600,
+          }}
+        >
+          ⬇ Descargar CSV (Excel / Google Sheets)
+        </a>
+      </p>
 
       {submissions.length === 0 && <p>Aún no hay postulaciones.</p>}
 
@@ -30,6 +48,8 @@ export default async function PonentesAdminPage() {
                 fontSize: 12,
                 padding: "2px 8px",
                 borderRadius: 999,
+                color:
+                  s.status === "ACEPTADA" ? "#1b5e20" : s.status === "RECHAZADA" ? "#8e2a22" : "#8a5a00",
                 background:
                   s.status === "ACEPTADA" ? "#d5f5e3" : s.status === "RECHAZADA" ? "#fadbd8" : "#fdebd0",
               }}
@@ -85,6 +105,14 @@ export default async function PonentesAdminPage() {
             >
               <button type="submit">Volver a pendiente</button>
             </form>
+            <span style={{ flex: 1 }} />
+            <ConfirmDelete
+              mensaje={`¿Borrar la postulación de ${s.nombre} ("${s.tema}")? Esta acción no se puede deshacer.`}
+              action={async () => {
+                "use server";
+                await eliminarPonente(s.id);
+              }}
+            />
           </div>
         </details>
       ))}

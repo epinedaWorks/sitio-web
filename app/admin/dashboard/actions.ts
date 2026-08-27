@@ -1,8 +1,36 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/require-admin";
+
+// Cambia la contraseña del usuario admin que tiene la sesión activa.
+export async function cambiarPassword(formData: FormData) {
+  const session = await requireAdminSession();
+  const email = session.user?.email;
+  if (!email) redirect("/admin/login");
+
+  const actual = String(formData.get("actual") || "");
+  const nueva = String(formData.get("nueva") || "");
+  const confirmar = String(formData.get("confirmar") || "");
+
+  if (nueva.length < 8) redirect("/admin/dashboard/cuenta?msg=corta");
+  if (nueva !== confirmar) redirect("/admin/dashboard/cuenta?msg=nocoincide");
+
+  const user = await prisma.adminUser.findUnique({ where: { email: email! } });
+  if (!user) redirect("/admin/dashboard/cuenta?msg=error");
+
+  const ok = await bcrypt.compare(actual, user!.passwordHash);
+  if (!ok) redirect("/admin/dashboard/cuenta?msg=malactual");
+
+  await prisma.adminUser.update({
+    where: { email: email! },
+    data: { passwordHash: await bcrypt.hash(nueva, 10) },
+  });
+  redirect("/admin/dashboard/cuenta?msg=ok");
+}
 
 export async function crearEvento(formData: FormData) {
   await requireAdminSession();
@@ -83,5 +111,17 @@ export async function actualizarEstadoPonente(
     where: { id: submissionId },
     data: { status },
   });
+  revalidatePath("/admin/dashboard/ponentes");
+}
+
+export async function eliminarInscrito(id: string) {
+  await requireAdminSession();
+  await prisma.attendeeRegistration.delete({ where: { id } });
+  revalidatePath("/admin/dashboard/inscritos");
+}
+
+export async function eliminarPonente(id: string) {
+  await requireAdminSession();
+  await prisma.speakerSubmission.delete({ where: { id } });
   revalidatePath("/admin/dashboard/ponentes");
 }

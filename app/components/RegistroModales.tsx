@@ -298,9 +298,9 @@ export default function RegistroModales() {
                     <label className="form-check">
                       <input type="checkbox" name="compartirDatos" />
                       <span>
-                        <b>Opcional.</b> Si gustas, puedes autorizar que compartamos tu contacto con
-                        empresas aliadas de la comunidad que buscan talento (oportunidades de trabajo,
-                        pasantías, etc.). Marcar o no esta casilla <b>no influye</b> en tu inscripción.
+                        Marca esta casilla si gustas compartir tus datos de contacto con empresas
+                        aliadas de la comunidad que buscan talento (oportunidades de trabajo,
+                        pasantías, etc.). Es <b>opcional</b> y no influye en tu inscripción.
                       </span>
                     </label>
 
@@ -457,10 +457,10 @@ export default function RegistroModales() {
                     <label className="form-check">
                       <input type="checkbox" name="compartirDatos" />
                       <span>
-                        <b>Opcional.</b> Si gustas, puedes autorizar que compartamos tu contacto con
-                        empresas aliadas de la comunidad que buscan talento (oportunidades de trabajo,
-                        pasantías, etc.). Marcar o no esta casilla <b>no influye</b> en la evaluación
-                        de tu propuesta.
+                        Marca esta casilla si gustas compartir tus datos de contacto con empresas
+                        aliadas de la comunidad que buscan talento (oportunidades de trabajo,
+                        pasantías, etc.). Es <b>opcional</b> y no influye en la evaluación de tu
+                        propuesta.
                       </span>
                     </label>
 

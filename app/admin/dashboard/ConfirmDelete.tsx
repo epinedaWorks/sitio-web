@@ -14,8 +14,6 @@ export default function ConfirmDelete({
   return (
     <form
       action={action}
-      // stopPropagation: sirve dentro de <summary> para no expandir la fila al borrar
-      onClick={(e) => e.stopPropagation()}
       onSubmit={(e) => {
         if (!window.confirm(mensaje)) e.preventDefault();
       }}

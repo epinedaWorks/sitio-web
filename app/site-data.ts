@@ -64,12 +64,13 @@ export const COC = [
   { b: "Lenguaje acogedor.", rest: "Fomentamos un entorno donde cualquiera pueda participar y marcar la diferencia." },
 ];
 
+// Con "/#…" para que funcionen desde cualquier página, no solo la portada.
 export const NAV_LINKS: { href: string; label: string; contacto?: boolean }[] = [
-  { href: "#comunidad", label: "Comunidad" },
-  { href: "#eventos", label: "Eventos" },
-  { href: "#apoyanos", label: "Apóyanos" },
-  { href: "#equipo", label: "Equipo" },
-  { href: "#conducta", label: "Código de conducta" },
-  { href: "#unete", label: "Únete" },
-  { href: "#apoyanos", label: "Contacto", contacto: true },
+  { href: "/#comunidad", label: "Comunidad" },
+  { href: "/#eventos", label: "Eventos" },
+  { href: "/#apoyanos", label: "Apóyanos" },
+  { href: "/#equipo", label: "Equipo" },
+  { href: "/#conducta", label: "Código de conducta" },
+  { href: "/#unete", label: "Únete" },
+  { href: "/#apoyanos", label: "Contacto", contacto: true },
 ];

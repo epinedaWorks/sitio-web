@@ -17,7 +17,7 @@ export default function Nav() {
   return (
     <header className={`nav${scrolled ? " scrolled" : ""}`} id="nav">
       <div className="container nav-inner">
-        <a className="brand" href="#inicio" aria-label="Inicio">
+        <a className="brand" href="/#inicio" aria-label="Ir al inicio">
           <img
             className="logo"
             src="/assets/img/brand/logo-badge.png"
@@ -43,7 +43,7 @@ export default function Nav() {
           ))}
           <a
             className="btn btn-primary js-inscribir"
-            href="#eventos"
+            href="/inscripcion"
             onClick={() => setOpen(false)}
           >
             Inscríbete al Python eXposition Day

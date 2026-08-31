@@ -7,7 +7,7 @@ export default function Footer() {
       <div className="container">
         <div className="foot-grid">
           <div>
-            <a className="brand" href="#inicio">
+            <a className="brand" href="/#inicio">
               <img
                 className="logo"
                 src="/assets/img/brand/logo-badge.png"

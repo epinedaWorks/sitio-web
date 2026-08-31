@@ -1,49 +1,105 @@
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
-import EventoModales from "@/app/components/EventoModales";
+import Albumes, { type Album } from "@/app/components/Albumes";
+import { EVENT_SLUG } from "@/app/site-data";
 
-export default async function EventoDetallePage({ params }: { params: { slug: string } }) {
-  const evento = await prisma.event.findUnique({
-    where: { slug: params.slug },
+export const revalidate = 3600;
+
+async function getEvento(slug: string) {
+  return prisma.event.findUnique({
+    where: { slug },
     include: {
       albums: {
-        include: { images: { orderBy: { order: "asc" } } },
+        include: {
+          images: { orderBy: { order: "asc" }, select: { url: true, caption: true } },
+        },
         orderBy: { createdAt: "asc" },
       },
     },
   });
+}
 
-  if (!evento || !evento.published) return notFound();
+export async function generateMetadata({
+  params,
+}: {
+  params: { slug: string };
+}): Promise<Metadata> {
+  const e = await getEvento(params.slug);
+  if (!e || !e.published) return { title: "Evento no encontrado" };
+  const foto = e.albums.flatMap((a) => a.images)[0]?.url;
+  const fecha = e.date.toLocaleDateString("es-GT", { dateStyle: "long" });
+  return {
+    title: e.title,
+    description: `${e.title} · ${fecha} · ${e.location}. ${e.description}`.slice(0, 300),
+    openGraph: {
+      title: e.title,
+      description: e.description.slice(0, 200),
+      images: foto ? [foto] : undefined,
+    },
+  };
+}
+
+export default async function EventoDetallePage({
+  params,
+}: {
+  params: { slug: string };
+}) {
+  const e = await getEvento(params.slug);
+  if (!e || !e.published) return notFound();
+
+  const esProximo = e.date.getTime() >= Date.now();
+  const albums: Album[] = e.albums
+    .map((a) => ({ id: a.id, title: a.title, description: a.description, images: a.images }))
+    .filter((a) => a.images.length > 0);
 
   return (
-    <main style={{ maxWidth: 900, margin: "40px auto", fontFamily: "sans-serif" }}>
-      <h1>{evento.title}</h1>
-      <p style={{ opacity: 0.75 }}>
-        {evento.date.toLocaleDateString("es-GT", { dateStyle: "long" })} · {evento.location}
-      </p>
-      <p>{evento.description}</p>
+    <main>
+      <section className="section-pad" style={{ paddingTop: 140 }}>
+        <div className="container">
+          <div className="section-head reveal" style={{ maxWidth: 820 }}>
+            <span className="eyebrow">{esProximo ? "Próximo evento" : "Edición pasada"}</span>
+            <h1 style={{ fontSize: "clamp(2rem, 4.6vw, 3.4rem)", margin: "18px 0 14px", lineHeight: 1.02 }}>
+              {e.title}
+            </h1>
+            <p style={{ color: "var(--gold)", fontFamily: "var(--font-head)", fontWeight: 700, marginBottom: 14 }}>
+              {e.date.toLocaleDateString("es-GT", { dateStyle: "full" })} · {e.location}
+            </p>
+            <p style={{ color: "var(--soft)", fontSize: "1.08rem" }}>{e.description}</p>
 
-      <EventoModales eventSlug={evento.slug} />
-
-      <h2 style={{ marginTop: 40 }}>Galería por actividad</h2>
-      {evento.albums.map((album) => (
-        <section key={album.id} style={{ marginBottom: 32 }}>
-          <h3>{album.title}</h3>
-          {album.description && <p style={{ opacity: 0.75 }}>{album.description}</p>}
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))", gap: 10 }}>
-            {album.images.map((img) => (
-              <img
-                key={img.id}
-                src={img.url}
-                alt={img.caption || album.title}
-                style={{ width: "100%", aspectRatio: "1", objectFit: "cover", borderRadius: 8 }}
-              />
-            ))}
+            {esProximo && e.slug === EVENT_SLUG && (
+              <div className="hero-cta" style={{ marginTop: 24 }}>
+                <a className="btn btn-yellow js-inscribir" href="/inscripcion">
+                  Inscríbete como asistente →
+                </a>
+                <a className="btn btn-primary js-ponente" href="/conferencistas">
+                  Ser conferencista, tallerista o expositor
+                </a>
+              </div>
+            )}
           </div>
-          {album.images.length === 0 && <p style={{ opacity: 0.6, fontSize: 14 }}>Aún no hay fotos en este álbum.</p>}
-        </section>
-      ))}
-      {evento.albums.length === 0 && <p>Aún no hay álbumes para este evento.</p>}
+
+          {albums.length > 0 ? (
+            <Albumes
+              albums={albums}
+              heading={`Galería · ${e.title}`}
+              sub="Momentos capturados por la comunidad · haz clic para ampliar"
+            />
+          ) : (
+            <p style={{ color: "var(--dim)", marginTop: 20 }}>
+              {esProximo
+                ? "Las fotos se publicarán después del evento."
+                : "Aún no hay fotos de este evento."}
+            </p>
+          )}
+
+          <p style={{ marginTop: 40 }}>
+            <a className="eu-link" href="/eventos">
+              ← Ver todos los eventos
+            </a>
+          </p>
+        </div>
+      </section>
     </main>
   );
 }

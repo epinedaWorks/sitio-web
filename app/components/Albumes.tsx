@@ -20,7 +20,15 @@ const thumbOf = (url: string) => {
   return url;
 };
 
-export default function Albumes({ albums }: { albums: Album[] }) {
+export default function Albumes({
+  albums,
+  heading = "Galería de la comunidad",
+  sub = "Álbumes por actividad · haz clic para ver todas las fotos",
+}: {
+  albums: Album[];
+  heading?: string;
+  sub?: string;
+}) {
   const [abierto, setAbierto] = useState<Album | null>(null);
   const [lb, setLb] = useState<number | null>(null);
 
@@ -65,10 +73,12 @@ export default function Albumes({ albums }: { albums: Album[] }) {
     <div id="galeria">
       <div className="albumes-head reveal">
         <div>
-          <h4>Galería de la comunidad</h4>
-          <p>Álbumes por actividad · haz clic para ver todas las fotos</p>
+          <h4>{heading}</h4>
+          <p>{sub}</p>
         </div>
-        <span className="eyebrow">{albums.length} álbumes</span>
+        <span className="eyebrow">
+          {albums.length} álbum{albums.length === 1 ? "" : "es"}
+        </span>
       </div>
 
       <div className="album-grid">

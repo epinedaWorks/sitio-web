@@ -7,7 +7,7 @@ export const SOCIALS = [
   { icon: "📸", label: "Instagram", handle: "@pythonguatemala", href: "https://www.instagram.com/pythonguatemala/" },
   { icon: "👍", label: "Facebook", handle: "Python Guatemala", href: "https://www.facebook.com/pythonGuatemala/" },
   { icon: "📅", label: "Meetup", handle: "python-guatemala", href: "https://www.meetup.com/python-guatemala/" },
-  { icon: "💼", label: "LinkedIn", handle: "Python Guatemala", href: "https://www.linkedin.com/in/python-guatemala-a741a3342/" },
+  { icon: "💼", label: "LinkedIn", handle: "Python Guatemala", href: "https://www.linkedin.com/company/python-guatemala/" },
   { icon: "💻", label: "GitHub", handle: "ComunidadPythonGuatemala", href: "https://github.com/ComunidadPythonGuatemala" },
 ];
 

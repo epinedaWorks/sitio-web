@@ -1,12 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 import { EVENT_SLUG } from "../site-data";
 
 type Modo = null | "inscripcion" | "ponente" | "contacto";
 type Estado = "idle" | "enviando" | "ok";
 
+// URLs cortas para compartir: cada una abre su formulario al cargar.
+const RUTA_A_MODO: Record<string, Exclude<Modo, null>> = {
+  "/inscripcion": "inscripcion",
+  "/conferencistas": "ponente",
+  "/ponentes": "ponente",
+  "/contacto": "contacto",
+};
+
 export default function RegistroModales() {
+  const pathname = usePathname();
+  const router = useRouter();
   const [modo, setModo] = useState<Modo>(null);
   const [estado, setEstado] = useState<Estado>("idle");
   const [error, setError] = useState("");
@@ -23,7 +34,17 @@ export default function RegistroModales() {
     setModo(m);
   }, []);
 
-  const cerrar = useCallback(() => setModo(null), []);
+  const cerrar = useCallback(() => {
+    setModo(null);
+    // Si venías de una URL corta (/inscripcion, /conferencistas…), vuelve al inicio.
+    if (pathname && RUTA_A_MODO[pathname]) router.replace("/");
+  }, [pathname, router]);
+
+  // Abre el formulario correspondiente si la URL es una de las cortas.
+  useEffect(() => {
+    if (pathname && RUTA_A_MODO[pathname]) abrir(RUTA_A_MODO[pathname]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname]);
 
   const lanzarToast = useCallback((msg: string, err = false) => {
     setToast({ msg, err });

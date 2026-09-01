@@ -76,9 +76,9 @@ export const SPONSOR_TIERS: {
 }[] = [
   {
     nombre: "Aliado Colaborador",
-    precio: "Aporte en especie",
-    etiqueta: "A tu medida",
-    para: "Para quienes quieren sumarse aportando bienes o servicios, según lo que esté a su alcance.",
+    precio: "A tu medida",
+    etiqueta: "Aporte flexible",
+    para: "Para quienes quieren sumarse aportando productos o servicios, según lo que esté a su alcance.",
     incluye: [
       "Aportas lo que puedas: refacción o coffee break, stickers y artículos promocionales, impresión de materiales, premios para dinámicas, espacio, equipo audiovisual, etc.",
       "Mención y agradecimiento como aliado en las redes sociales oficiales.",

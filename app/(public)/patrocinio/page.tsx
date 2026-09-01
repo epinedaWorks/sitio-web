@@ -20,9 +20,9 @@ export default function PatrocinioPage() {
               Niveles de patrocinio
             </h1>
             <p style={{ color: "var(--soft)" }}>
-              Puedes acompañar el <b>Python eXposition Day 2026</b> con un aporte en especie o con
-              uno de los 3 niveles. En los niveles, los beneficios son acumulativos: cada uno
-              incluye todo lo del anterior.
+              Puedes acompañar el <b>Python eXposition Day 2026</b> con un aporte flexible (productos
+              o servicios) o con uno de los 3 niveles. En los niveles, los beneficios son
+              acumulativos: cada uno incluye todo lo del anterior.
             </p>
           </div>
 

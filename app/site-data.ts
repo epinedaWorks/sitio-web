@@ -64,6 +64,50 @@ export const COC = [
   { b: "Lenguaje acogedor.", rest: "Fomentamos un entorno donde cualquiera pueda participar y marcar la diferencia." },
 ];
 
+// Niveles de patrocinio — se muestran solo en /patrocinio (página no enlazada).
+export const SPONSOR_TIERS = [
+  {
+    nivel: 1,
+    nombre: "Aliado Emprendedor",
+    precio: "Q250",
+    para: "Ideal para empresas que desean presencia de marca y visibilidad digital en el evento.",
+    incluye: [
+      "Logo en piezas promocionales digitales (redes sociales, afiches y materiales del evento).",
+      "Mención en la apertura y cierre del evento.",
+      "Reconocimiento como “Aliado Básico” en las redes sociales oficiales.",
+    ],
+  },
+  {
+    nivel: 2,
+    nombre: "Aliado Estratégico",
+    precio: "Q500",
+    para: "Para empresas que buscan un rol más activo y visibilidad ampliada durante el evento.",
+    incluye: [
+      "Todo lo del nivel anterior.",
+      "Espacio para compartir material promocional o folletos durante el evento (brindado por el patrocinador).",
+      "Logo más grande que el nivel básico, en el banner principal y en la presentación de bienvenida.",
+      "Logotipo proyectado durante las charlas.",
+    ],
+  },
+  {
+    nivel: 3,
+    nombre: "Aliado Premium",
+    precio: "Q900",
+    destacado: true,
+    para: "Para empresas que buscan el rol más activo y la mayor visibilidad durante y después del evento.",
+    incluye: [
+      "Todo lo del nivel anterior.",
+      "Logo más grande que el nivel 2, en el banner principal y en la presentación de bienvenida.",
+      "Presencia preferente de marca en escenario, banners y redes sociales.",
+      "Reconocimiento entregado en la reunión de clausura.",
+      "Mención especial como “Aliado Premium” en medios y publicaciones posteriores al evento.",
+      "Espacio para dar una charla de 25 minutos o un taller de 120 minutos.",
+      "Logo dentro del diploma digital de participación de asistentes y ponentes.",
+      "Acceso al listado de asistentes con perfil académico y laboral (bajo consentimiento).",
+    ],
+  },
+];
+
 // Con "/#…" para que funcionen desde cualquier página, no solo la portada.
 export const NAV_LINKS: { href: string; label: string; contacto?: boolean }[] = [
   { href: "/#comunidad", label: "Comunidad" },

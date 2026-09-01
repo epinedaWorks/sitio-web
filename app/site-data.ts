@@ -65,11 +65,30 @@ export const COC = [
 ];
 
 // Niveles de patrocinio — se muestran solo en /patrocinio (página no enlazada).
-export const SPONSOR_TIERS = [
+export const SPONSOR_TIERS: {
+  nivel?: number;
+  nombre: string;
+  precio: string;
+  etiqueta?: string;
+  para: string;
+  destacado?: boolean;
+  incluye: string[];
+}[] = [
+  {
+    nombre: "Aliado Colaborador",
+    precio: "Aporte en especie",
+    etiqueta: "A tu medida",
+    para: "Para quienes quieren sumarse aportando bienes o servicios, según lo que esté a su alcance.",
+    incluye: [
+      "Aportas lo que puedas: refacción o coffee break, stickers y artículos promocionales, impresión de materiales, premios para dinámicas, espacio, equipo audiovisual, etc.",
+      "Mención y agradecimiento como aliado en las redes sociales oficiales.",
+      "Logo en los materiales digitales del evento, según el aporte.",
+    ],
+  },
   {
     nivel: 1,
     nombre: "Aliado Emprendedor",
-    precio: "Q250",
+    precio: "Q300",
     para: "Ideal para empresas que desean presencia de marca y visibilidad digital en el evento.",
     incluye: [
       "Logo en piezas promocionales digitales (redes sociales, afiches y materiales del evento).",
@@ -80,7 +99,7 @@ export const SPONSOR_TIERS = [
   {
     nivel: 2,
     nombre: "Aliado Estratégico",
-    precio: "Q500",
+    precio: "Q600",
     para: "Para empresas que buscan un rol más activo y visibilidad ampliada durante el evento.",
     incluye: [
       "Todo lo del nivel anterior.",
@@ -92,7 +111,7 @@ export const SPONSOR_TIERS = [
   {
     nivel: 3,
     nombre: "Aliado Premium",
-    precio: "Q900",
+    precio: "Q1000",
     destacado: true,
     para: "Para empresas que buscan el rol más activo y la mayor visibilidad durante y después del evento.",
     incluye: [

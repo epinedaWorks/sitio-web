@@ -316,7 +316,7 @@ h1, h2, h3, h4, .brand { font-family: var(--font-head); font-weight: 800; line-h
 .check-list b { color: var(--cream); }
 
 /* ---------- Niveles de patrocinio (/patrocinio) ---------- */
-.tier-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 22px; align-items: start; }
+.tier-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; align-items: start; }
 .tier {
   display: flex; flex-direction: column; height: 100%;
   background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--radius);
@@ -328,13 +328,14 @@ h1, h2, h3, h4, .brand { font-family: var(--font-head); font-weight: 800; line-h
 }
 .tier .nivel { font-family: var(--font-head); font-size: 0.78rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); }
 .tier h3 { font-size: 1.5rem; margin: 8px 0 4px; }
-.tier .precio { font-family: var(--font-head); font-size: 2.2rem; color: var(--jade); line-height: 1; margin: 6px 0 12px; }
+.tier .precio { font-family: var(--font-head); font-size: 2.2rem; color: var(--jade); line-height: 1.05; margin: 6px 0 12px; }
+.tier .precio.texto { font-size: 1.15rem; color: var(--gold); }
 .tier .para { color: var(--soft); font-size: 0.95rem; margin-bottom: 16px; }
 .tier ul { list-style: none; display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; flex: 1; }
 .tier li { color: var(--soft); font-size: 0.94rem; line-height: 1.5; padding-left: 26px; position: relative; }
 .tier li::before { content: "✓"; position: absolute; left: 0; top: 0; color: var(--jade); font-weight: 700; }
 .tier .btn { margin-top: auto; justify-content: center; }
-@media (max-width: 940px) { .tier-grid { grid-template-columns: 1fr; max-width: 460px; margin-inline: auto; } }
+@media (max-width: 560px) { .tier-grid { grid-template-columns: 1fr; max-width: 460px; margin-inline: auto; } }
 
 /* ---------- Equipo ---------- */
 .team-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }

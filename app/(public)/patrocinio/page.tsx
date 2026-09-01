@@ -20,17 +20,18 @@ export default function PatrocinioPage() {
               Niveles de patrocinio
             </h1>
             <p style={{ color: "var(--soft)" }}>
-              Actualmente contamos con 3 niveles para acompañar el <b>Python eXposition Day 2026</b>.
-              Los beneficios son acumulativos: cada nivel incluye todo lo del anterior.
+              Puedes acompañar el <b>Python eXposition Day 2026</b> con un aporte en especie o con
+              uno de los 3 niveles. En los niveles, los beneficios son acumulativos: cada uno
+              incluye todo lo del anterior.
             </p>
           </div>
 
           <div className="tier-grid">
             {SPONSOR_TIERS.map((t) => (
-              <article key={t.nivel} className={`tier reveal${t.destacado ? " destacado" : ""}`}>
-                <span className="nivel">Nivel {t.nivel}</span>
+              <article key={t.nombre} className={`tier reveal${t.destacado ? " destacado" : ""}`}>
+                <span className="nivel">{t.nivel ? `Nivel ${t.nivel}` : t.etiqueta}</span>
                 <h3>{t.nombre}</h3>
-                <div className="precio">{t.precio}</div>
+                <div className={`precio${t.precio.startsWith("Q") ? "" : " texto"}`}>{t.precio}</div>
                 <p className="para">{t.para}</p>
                 <ul>
                   {t.incluye.map((item) => (
@@ -38,7 +39,7 @@ export default function PatrocinioPage() {
                   ))}
                 </ul>
                 <a className="btn btn-primary js-contacto" href="/contacto">
-                  Quiero este nivel →
+                  {t.nivel ? "Quiero este nivel →" : "Quiero apoyar así →"}
                 </a>
               </article>
             ))}

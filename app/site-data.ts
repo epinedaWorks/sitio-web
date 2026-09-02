@@ -111,7 +111,7 @@ export const SPONSOR_TIERS: {
   {
     nivel: 3,
     nombre: "Aliado Premium",
-    precio: "Q1000",
+    precio: "Q1200",
     destacado: true,
     para: "Para empresas que buscan el rol más activo y la mayor visibilidad durante y después del evento.",
     incluye: [

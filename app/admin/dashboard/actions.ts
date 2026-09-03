@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { getStore } from "@netlify/blobs";
 import { prisma } from "@/lib/prisma";
-import { requireAdminSession } from "@/lib/require-admin";
+import { requireAdminSession, requireAdminRole } from "@/lib/require-admin";
 import {
   invalidarSettingsCache,
   SETTING_TEAM_EMAIL,
@@ -14,9 +14,43 @@ import {
 
 const GALLERY_STORE = "gallery";
 
-// Guarda los correos del equipo y la copia oculta (editables desde el panel).
+// ---- Usuarios del panel (solo ADMIN) ----
+export async function crearUsuario(formData: FormData) {
+  await requireAdminRole();
+  const name = String(formData.get("name") || "").trim();
+  const email = String(formData.get("email") || "").trim().toLowerCase();
+  const password = String(formData.get("password") || "");
+  const role = String(formData.get("role") || "EDITOR") === "ADMIN" ? "ADMIN" : "EDITOR";
+
+  if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8) {
+    redirect("/admin/dashboard/usuarios?msg=datos");
+  }
+  const existe = await prisma.adminUser.findUnique({ where: { email } });
+  if (existe) redirect("/admin/dashboard/usuarios?msg=repetido");
+
+  await prisma.adminUser.create({
+    data: { name, email, role, passwordHash: await bcrypt.hash(password, 10) },
+  });
+  redirect("/admin/dashboard/usuarios?msg=creado");
+}
+
+export async function eliminarUsuario(id: string) {
+  const session = await requireAdminRole();
+  const yo = (session.user as { email?: string } | undefined)?.email;
+  const objetivo = await prisma.adminUser.findUnique({ where: { id } });
+  if (!objetivo) return;
+  if (objetivo.email === yo) redirect("/admin/dashboard/usuarios?msg=propio");
+
+  const total = await prisma.adminUser.count();
+  if (total <= 1) redirect("/admin/dashboard/usuarios?msg=ultimo");
+
+  await prisma.adminUser.delete({ where: { id } });
+  redirect("/admin/dashboard/usuarios?msg=eliminado");
+}
+
+// Guarda los correos del equipo y la copia oculta (solo ADMIN).
 export async function guardarAjustes(formData: FormData) {
-  await requireAdminSession();
+  await requireAdminRole();
   const normaliza = (s: string) =>
     s
       .split(/[,\n;]+/)

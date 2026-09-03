@@ -11,3 +11,13 @@ export async function requireAdminSession() {
   }
   return session;
 }
+
+// Solo para lo sensible (usuarios, ajustes de correo): exige rol ADMIN.
+// Un EDITOR con sesión válida se manda de vuelta al panel.
+export async function requireAdminRole() {
+  const session = await requireAdminSession();
+  if ((session.user as { role?: string } | undefined)?.role !== "ADMIN") {
+    redirect("/admin/dashboard");
+  }
+  return session;
+}

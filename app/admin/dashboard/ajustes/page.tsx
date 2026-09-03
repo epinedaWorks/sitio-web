@@ -1,4 +1,4 @@
-import { requireAdminSession } from "@/lib/require-admin";
+import { requireAdminRole } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { SETTING_TEAM_EMAIL, SETTING_EMAIL_BCC } from "@/lib/settings";
 import { guardarAjustes } from "../actions";
@@ -10,7 +10,7 @@ export default async function AjustesPage({
 }: {
   searchParams: { msg?: string };
 }) {
-  await requireAdminSession();
+  await requireAdminRole();
 
   const rows = await prisma.setting.findMany({
     where: { key: { in: [SETTING_TEAM_EMAIL, SETTING_EMAIL_BCC] } },

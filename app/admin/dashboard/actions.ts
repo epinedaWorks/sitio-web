@@ -6,8 +6,40 @@ import bcrypt from "bcryptjs";
 import { getStore } from "@netlify/blobs";
 import { prisma } from "@/lib/prisma";
 import { requireAdminSession } from "@/lib/require-admin";
+import {
+  invalidarSettingsCache,
+  SETTING_TEAM_EMAIL,
+  SETTING_EMAIL_BCC,
+} from "@/lib/settings";
 
 const GALLERY_STORE = "gallery";
+
+// Guarda los correos del equipo y la copia oculta (editables desde el panel).
+export async function guardarAjustes(formData: FormData) {
+  await requireAdminSession();
+  const normaliza = (s: string) =>
+    s
+      .split(/[,\n;]+/)
+      .map((x) => x.trim())
+      .filter(Boolean)
+      .join(", ");
+  const team = normaliza(String(formData.get("teamEmail") || ""));
+  const bcc = normaliza(String(formData.get("emailBcc") || ""));
+  await prisma.$transaction([
+    prisma.setting.upsert({
+      where: { key: SETTING_TEAM_EMAIL },
+      create: { key: SETTING_TEAM_EMAIL, value: team },
+      update: { value: team },
+    }),
+    prisma.setting.upsert({
+      where: { key: SETTING_EMAIL_BCC },
+      create: { key: SETTING_EMAIL_BCC, value: bcc },
+      update: { value: bcc },
+    }),
+  ]);
+  invalidarSettingsCache();
+  redirect("/admin/dashboard/ajustes?msg=ok");
+}
 
 // Cambia la contraseña del usuario admin que tiene la sesión activa.
 export async function cambiarPassword(formData: FormData) {

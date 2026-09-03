@@ -26,7 +26,8 @@ export default async function DashboardHome() {
         <Card href="/admin/dashboard/contacto" title="Contacto sin atender" value={contacto} desc="Patrocinio, prensa, más información" />
       </div>
 
-      <p style={{ marginTop: 24 }}>
+      <p style={{ marginTop: 24, display: "flex", gap: 20, flexWrap: "wrap" }}>
+        <Link href="/admin/dashboard/ajustes">✉️ Ajustes de correo · a quién llegan los avisos</Link>
         <Link href="/admin/dashboard/cuenta">🔑 Mi cuenta · cambiar contraseña</Link>
       </p>
     </main>

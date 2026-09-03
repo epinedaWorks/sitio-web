@@ -1,16 +1,14 @@
-// Configuración por variables de entorno (.env)
+import { getListaCorreos, SETTING_TEAM_EMAIL, SETTING_EMAIL_BCC } from "./settings";
+
+// El remitente y la API key siguen por variable de entorno (dependen de Resend).
 const API_KEY = process.env.RESEND_API_KEY;
 const FROM = process.env.EMAIL_FROM || "Comunidad Python Guatemala <no-reply@pythonguatemala.dev>";
-const TEAM_LIST = (process.env.TEAM_EMAIL || "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean); // correo(s) del equipo
 const ADMIN_URL = process.env.ADMIN_URL || "http://localhost:3000/admin/dashboard";
-// Copia oculta (BCC) para archivar todos los correos salientes. Opcional.
-const BCC_LIST = (process.env.EMAIL_BCC || "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
+
+// Los correos del equipo y la copia oculta se editan desde el panel
+// (/admin/dashboard/ajustes); la variable de entorno es el respaldo.
+export const getCorreosEquipo = () => getListaCorreos(SETTING_TEAM_EMAIL, process.env.TEAM_EMAIL);
+const getBccGlobal = () => getListaCorreos(SETTING_EMAIL_BCC, process.env.EMAIL_BCC);
 
 let avisado = false;
 function sinConfig() {
@@ -34,12 +32,12 @@ async function enviar(opts: {
     sinConfig();
     return;
   }
-  // Junta la BCC global (EMAIL_BCC) con la de este envío, sin duplicar ni
-  // meter en CCO a alguien que ya está en el "Para".
+  // Junta la BCC global (ajuste del panel) con la de este envío, sin duplicar
+  // ni meter en CCO a alguien que ya está en el "Para".
   const destinatarios = new Set(
     (Array.isArray(opts.to) ? opts.to : [opts.to]).map((s) => s.toLowerCase())
   );
-  const bcc = [...new Set([...BCC_LIST, ...(opts.bcc || [])])].filter(
+  const bcc = [...new Set([...(await getBccGlobal()), ...(opts.bcc || [])])].filter(
     (b) => !destinatarios.has(b.toLowerCase())
   );
   try {
@@ -115,6 +113,7 @@ export type DatosInscripcion = {
 };
 
 export async function sendRegistrationEmails(d: DatosInscripcion) {
+  const TEAM_LIST = await getCorreosEquipo();
   // Al participante
   await enviar({
     to: d.correo,
@@ -190,6 +189,7 @@ export type DatosPonente = {
 };
 
 export async function sendSpeakerEmails(d: DatosPonente) {
+  const TEAM_LIST = await getCorreosEquipo();
   await enviar({
     to: d.correo,
     subject: `Propuesta recibida · ${d.eventoTitulo}`,
@@ -250,6 +250,7 @@ export type DatosContacto = {
 };
 
 export async function sendContactEmail(d: DatosContacto) {
+  const TEAM_LIST = await getCorreosEquipo();
   // Aviso al equipo
   if (TEAM_LIST.length) {
     await enviar({

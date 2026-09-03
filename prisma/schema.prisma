@@ -140,6 +140,13 @@ model ContactMessage {
   createdAt    DateTime @default(now())
 }
 
+// Ajustes editables desde el panel (correos del equipo, copia oculta…).
+// Si no hay fila, se usa la variable de entorno como respaldo.
+model Setting {
+  key   String @id
+  value String
+}
+
 // Foto individual dentro de un álbum
 model GalleryImage {
   id        String   @id @default(cuid())

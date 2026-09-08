@@ -74,8 +74,6 @@ export default function Hero() {
               </span>
             </div>
           </div>
-          <div className="chip chip-1">🇬🇹 Hecho en Guatemala</div>
-          <div className="chip chip-3">🐍 100% gratis y abierto</div>
         </div>
       </div>
     </section>

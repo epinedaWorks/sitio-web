@@ -77,28 +77,57 @@ export default function Scanner() {
   const iniciar = useCallback(async () => {
     setError("");
     setResultado(null);
+
+    if (!navigator.mediaDevices?.getUserMedia) {
+      setError("Este navegador no permite usar la cámara. Prueba con Chrome o Safari actualizado.");
+      return;
+    }
+
+    const onResult = (result?: { getText: () => string }) => {
+      if (!result) return;
+      const txt = result.getText();
+      const ahora = Date.now();
+      if (txt === ultimoRef.current.txt && ahora - ultimoRef.current.t < 3500) return;
+      ultimoRef.current = { txt, t: ahora };
+      registrar({ codigo: txt });
+    };
+
     try {
       const { BrowserQRCodeReader } = await import("@zxing/browser");
       const reader = new BrowserQRCodeReader();
-      const controls = await reader.decodeFromVideoDevice(
-        undefined,
-        videoRef.current ?? undefined,
-        (result) => {
-          if (!result) return;
-          const txt = result.getText();
-          const ahora = Date.now();
-          // no repetir el mismo QR en < 3.5 s
-          if (txt === ultimoRef.current.txt && ahora - ultimoRef.current.t < 3500) return;
-          ultimoRef.current = { txt, t: ahora };
-          registrar({ codigo: txt });
-        }
-      );
+      // Pedimos explícitamente la cámara trasera; esto dispara el permiso.
+      let controls;
+      try {
+        controls = await reader.decodeFromConstraints(
+          { video: { facingMode: { ideal: "environment" } } },
+          videoRef.current ?? undefined,
+          onResult
+        );
+      } catch {
+        // fallback: cualquier cámara disponible
+        controls = await reader.decodeFromVideoDevice(
+          undefined,
+          videoRef.current ?? undefined,
+          onResult
+        );
+      }
       controlsRef.current = controls;
       setEscaneando(true);
     } catch (e) {
-      setError(
-        "No se pudo abrir la cámara. Da permiso de cámara y usa el sitio con https (o localhost)."
-      );
+      const name = e instanceof DOMException ? e.name : "";
+      if (name === "NotAllowedError" || name === "SecurityError") {
+        setError(
+          "Diste 'bloquear' al permiso de cámara. Ábrelo en el candado de la barra de direcciones → Permisos → Cámara → Permitir, y recarga."
+        );
+      } else if (name === "NotFoundError" || name === "OverconstrainedError") {
+        setError("No se encontró una cámara en este dispositivo.");
+      } else if (name === "NotReadableError") {
+        setError("La cámara está en uso por otra app. Ciérrala y vuelve a intentar.");
+      } else {
+        setError(
+          "No se pudo abrir la cámara. Usa el sitio con https, en Chrome o Safari, y da el permiso cuando lo pida."
+        );
+      }
     }
   }, [registrar]);
 

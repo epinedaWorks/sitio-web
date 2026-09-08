@@ -22,7 +22,9 @@ const nextConfig = {
       { key: "X-Frame-Options", value: "SAMEORIGIN" },
       {
         key: "Permissions-Policy",
-        value: "camera=(), microphone=(), geolocation=(), payment=()",
+        // camera=(self): lo usa el escáner de asistencia del panel; el resto del
+        // sitio no llama a la cámara, así que dejarlo en "self" no expone nada.
+        value: "camera=(self), microphone=(), geolocation=(), payment=()",
       },
     ];
     return [

@@ -4,7 +4,9 @@ import bcrypt from "bcryptjs";
 import { prisma } from "./prisma";
 
 export const authOptions: NextAuthOptions = {
-  session: { strategy: "jwt" },
+  // Sesión por JWT, de 7 días (antes usaba el default de 30). Es un panel admin:
+  // conviene que una sesión olvidada en un equipo ajeno caduque pronto.
+  session: { strategy: "jwt", maxAge: 60 * 60 * 24 * 7 },
   pages: {
     signIn: "/admin/login",
   },

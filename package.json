@@ -17,11 +17,13 @@
   "dependencies": {
     "@netlify/blobs": "^11.0.1",
     "@prisma/client": "5.16.1",
+    "@zxing/browser": "^0.2.1",
     "bcryptjs": "2.4.3",
     "exceljs": "^4.4.0",
     "heic2any": "^0.0.4",
     "next": "^14.2.35",
     "next-auth": "^4.24.11",
+    "qrcode": "^1.5.4",
     "react": "18.3.1",
     "react-dom": "18.3.1",
     "resend": "^6.24.0"
@@ -29,6 +31,7 @@
   "devDependencies": {
     "@types/bcryptjs": "2.4.6",
     "@types/node": "20.14.10",
+    "@types/qrcode": "^1.5.6",
     "@types/react": "18.3.3",
     "prisma": "5.16.1",
     "tsx": "4.16.2",

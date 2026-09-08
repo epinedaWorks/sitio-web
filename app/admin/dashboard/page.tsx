@@ -7,12 +7,13 @@ export default async function DashboardHome() {
   const role = (session.user as { role?: string } | undefined)?.role;
   const esAdmin = role === "ADMIN";
 
-  const [eventos, ponentes, inscritos, albumes, contacto] = await Promise.all([
+  const [eventos, ponentes, inscritos, albumes, contacto, ingresaron] = await Promise.all([
     prisma.event.count(),
     prisma.speakerSubmission.count({ where: { status: "PENDIENTE" } }),
     prisma.attendeeRegistration.count(),
     prisma.album.count(),
     prisma.contactMessage.count({ where: { atendido: false } }),
+    prisma.attendeeRegistration.count({ where: { checkedInAt: { not: null } } }),
   ]);
 
   return (
@@ -28,6 +29,7 @@ export default async function DashboardHome() {
         <Card href="/admin/dashboard/galeria" icon="🖼️" title="Álbumes de fotos" value={albumes} desc="Subir y ordenar fotos por actividad" />
         <Card href="/admin/dashboard/ponentes" icon="🎤" title="Postulaciones pendientes" value={ponentes} desc="Revisar y aprobar ponentes" />
         <Card href="/admin/dashboard/inscritos" icon="🎟️" title="Inscritos" value={inscritos} desc="Ver y exportar participantes" />
+        <Card href="/admin/dashboard/checkin" icon="📷" title="Asistencia (ingresaron)" value={ingresaron} desc="Escanear QR el día del evento" />
         <Card href="/admin/dashboard/contacto" icon="✉️" title="Contacto sin atender" value={contacto} desc="Patrocinio, prensa, más información" />
       </div>
 

@@ -28,12 +28,15 @@ export async function GET(req: Request) {
     headers = [
       "Nombre", "Correo", "Teléfono", "¿Asistirá?", "Rol", "Universidad", "Semestre",
       "Experiencia con Python", "¿Cómo se enteró?", "Comentarios",
-      "Autoriza compartir datos", "Evento", "Fecha de inscripción",
+      "Autoriza compartir datos", "Ingresó", "Hora de ingreso", "Evento", "Fecha de inscripción",
     ];
     rows = data.map((r) => [
       r.nombre, r.correo, r.telefono, r.asistira, r.rol, r.universidad, r.semestre,
       r.experiencia, r.comoSeEntero, r.comentarios,
-      r.compartirDatos ? "Sí" : "No", r.event.title, fmt(r.createdAt),
+      r.compartirDatos ? "Sí" : "No",
+      r.checkedInAt ? "Sí" : "No",
+      r.checkedInAt ? fmt(r.checkedInAt) : "",
+      r.event.title, fmt(r.createdAt),
     ]);
   } else if (tipo === "contacto") {
     const data = await prisma.contactMessage.findMany({ orderBy: { createdAt: "desc" } });

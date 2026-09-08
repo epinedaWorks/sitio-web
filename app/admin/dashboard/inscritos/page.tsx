@@ -1,6 +1,6 @@
 import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
-import { eliminarInscrito } from "../actions";
+import { eliminarInscrito, toggleCheckin } from "../actions";
 import ConfirmDelete from "../ConfirmDelete";
 
 export default async function InscritosAdminPage() {
@@ -11,12 +11,14 @@ export default async function InscritosAdminPage() {
   });
 
   const compartenDatos = registrations.filter((r) => r.compartirDatos).length;
+  const ingresaron = registrations.filter((r) => r.checkedInAt).length;
 
   return (
     <main style={{ maxWidth: 900, margin: "40px auto", fontFamily: "sans-serif" }}>
       <h1>Participantes inscritos</h1>
       <p style={{ opacity: 0.75 }}>
-        Total: {registrations.length} · Autorizan compartir datos con empresas: {compartenDatos}
+        Total: {registrations.length} · Ingresaron: {ingresaron} · Autorizan compartir datos:{" "}
+        {compartenDatos}
       </p>
 
       <p style={{ display: "flex", alignItems: "center", gap: 12 }}>
@@ -58,6 +60,11 @@ export default async function InscritosAdminPage() {
           <details style={{ flex: 1, minWidth: 0 }}>
             <summary style={{ cursor: "pointer", fontWeight: 600 }}>
               {r.nombre} · <span style={{ opacity: 0.7 }}>{r.correo}</span> · {r.asistira || "—"}
+              {r.checkedInAt && (
+                <span style={{ fontSize: 12, marginLeft: 8, padding: "2px 8px", borderRadius: 999, background: "#159d68", color: "#fff" }}>
+                  ✓ ingresó {r.checkedInAt.toLocaleTimeString("es-GT", { hour: "2-digit", minute: "2-digit" })}
+                </span>
+              )}
               {r.compartirDatos && (
                 <span style={{ fontSize: 12, marginLeft: 8, padding: "2px 8px", borderRadius: 999, background: "#d5f5e3", color: "#1b5e20" }}>
                   comparte datos
@@ -77,7 +84,21 @@ export default async function InscritosAdminPage() {
               <Field k="Autoriza compartir datos con empresas" v={r.compartirDatos ? "Sí" : "No"} />
               <Field k="Evento" v={r.event.title} />
               <Field k="Fecha de inscripción" v={r.createdAt.toLocaleString("es-GT")} />
+              <Field
+                k="Asistencia"
+                v={r.checkedInAt ? `Ingresó ${r.checkedInAt.toLocaleString("es-GT")}` : "No ha ingresado"}
+              />
             </dl>
+            <form
+              action={async () => {
+                "use server";
+                await toggleCheckin(r.id);
+              }}
+            >
+              <button type="submit">
+                {r.checkedInAt ? "Quitar asistencia" : "Marcar asistencia"}
+              </button>
+            </form>
           </details>
           <ConfirmDelete
             compact

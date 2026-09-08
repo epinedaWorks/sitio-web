@@ -58,6 +58,11 @@ model AttendeeRegistration {
   compartirDatos Boolean @default(false) // autoriza compartir contacto con empresas aliadas
   createdAt    DateTime @default(now())
 
+  // Check-in con QR el día del evento
+  checkinToken String?   @unique // código único que va en el QR de la persona
+  checkedInAt  DateTime? // cuándo se registró su asistencia (null = no ha llegado)
+  checkedInBy  String?   // correo de quien escaneó
+
   event   Event  @relation(fields: [eventId], references: [id])
   eventId String
 

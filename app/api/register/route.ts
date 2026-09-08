@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendRegistrationEmails } from "@/lib/email";
@@ -50,6 +51,7 @@ export async function POST(req: Request) {
         comoSeEntero: str(body.comoSeEntero) || null,
         comentarios: str(body.comentarios) || null,
         compartirDatos: body.compartirDatos === true,
+        checkinToken: randomBytes(9).toString("base64url"),
         eventId: event.id,
       },
     });
@@ -68,6 +70,7 @@ export async function POST(req: Request) {
       comentarios: registration.comentarios,
       compartirDatos: registration.compartirDatos,
       eventoTitulo: event.title,
+      checkinToken: registration.checkinToken,
     });
 
     return NextResponse.json({ ok: true, id: registration.id });

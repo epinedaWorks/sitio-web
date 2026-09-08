@@ -1,4 +1,5 @@
 import { getListaCorreos, SETTING_TEAM_EMAIL, SETTING_EMAIL_BCC } from "./settings";
+import { entradaUrl, qrUrl } from "./urls";
 
 // El remitente y la API key siguen por variable de entorno (dependen de Resend).
 const API_KEY = process.env.RESEND_API_KEY;
@@ -110,6 +111,7 @@ export type DatosInscripcion = {
   comentarios?: string | null;
   compartirDatos?: boolean;
   eventoTitulo: string;
+  checkinToken?: string | null;
 };
 
 export async function sendRegistrationEmails(d: DatosInscripcion) {
@@ -123,7 +125,18 @@ export async function sendRegistrationEmails(d: DatosInscripcion) {
       `<p style="font-size:14px;line-height:1.6">Recibimos tu inscripción al <strong>${esc(
         d.eventoTitulo
       )}</strong>. Te esperamos. Si tienes dudas, responde a este correo.</p>
-       <p style="font-size:13px;color:#666">Resumen de lo que enviaste:</p>
+       ${
+         d.checkinToken
+           ? `<p style="font-size:14px;line-height:1.6;margin-top:16px"><strong>Tu entrada</strong> — muestra este código QR en la entrada del evento:</p>
+              <p style="text-align:center;margin:12px 0"><img src="${qrUrl(
+                d.checkinToken
+              )}" alt="Código QR de tu entrada" width="220" height="220" style="border:6px solid #fff;border-radius:10px" /></p>
+              <p style="text-align:center;font-size:13px"><a href="${entradaUrl(
+                d.checkinToken
+              )}" style="color:#159d68">Abrir mi entrada</a> (guárdala o toma una captura)</p>`
+           : ""
+       }
+       <p style="font-size:13px;color:#666;margin-top:16px">Resumen de lo que enviaste:</p>
        ${filas([
          ["¿Asistirá?", d.asistira],
          ["Rol", d.rol],

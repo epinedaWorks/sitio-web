@@ -221,6 +221,24 @@ export async function eliminarInscrito(id: string) {
   revalidatePath("/admin/dashboard/inscritos");
 }
 
+// Marca / desmarca la asistencia de una persona a mano.
+export async function toggleCheckin(id: string) {
+  const session = await requireAdminSession();
+  const reg = await prisma.attendeeRegistration.findUnique({ where: { id } });
+  if (!reg) return;
+  await prisma.attendeeRegistration.update({
+    where: { id },
+    data: reg.checkedInAt
+      ? { checkedInAt: null, checkedInBy: null }
+      : {
+          checkedInAt: new Date(),
+          checkedInBy: (session.user as { email?: string } | undefined)?.email ?? null,
+        },
+  });
+  revalidatePath("/admin/dashboard/inscritos");
+  revalidatePath("/admin/dashboard/checkin");
+}
+
 export async function eliminarContacto(id: string) {
   await requireAdminSession();
   await prisma.contactMessage.delete({ where: { id } });

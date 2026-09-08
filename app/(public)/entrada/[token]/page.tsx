@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import { qrUrl } from "@/lib/urls";
+import { soloFecha, fechaHora } from "@/lib/fecha";
 
 export const dynamic = "force-dynamic";
 
@@ -17,7 +18,7 @@ export default async function EntradaPage({ params }: { params: { token: string 
   });
   if (!r) return notFound();
 
-  const fecha = r.event.date.toLocaleDateString("es-GT", { dateStyle: "full" });
+  const fecha = soloFecha(r.event.date, "full");
 
   return (
     <main>
@@ -58,7 +59,7 @@ export default async function EntradaPage({ params }: { params: { token: string 
 
           {r.checkedInAt ? (
             <p style={{ color: "var(--jade)", fontWeight: 600 }}>
-              ✅ Asistencia registrada · {r.checkedInAt.toLocaleString("es-GT")}
+              ✅ Asistencia registrada · {fechaHora(r.checkedInAt)}
             </p>
           ) : (
             <p style={{ color: "var(--soft)" }}>

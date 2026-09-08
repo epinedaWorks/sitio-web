@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { fechaHora } from "@/lib/fecha";
 
 type Resultado = {
   status: "ok" | "repetido" | "noexiste";
@@ -209,7 +210,7 @@ export default function Scanner() {
               </div>
               {resultado.status === "repetido" && resultado.checkedInAt && (
                 <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>
-                  Ingresó el {new Date(resultado.checkedInAt).toLocaleString("es-GT")}
+                  Ingresó el {fechaHora(new Date(resultado.checkedInAt))}
                 </div>
               )}
               {resultado.status === "ok" && resultado.asistira && resultado.asistira !== "Sí" && (

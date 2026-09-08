@@ -2,6 +2,7 @@ import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { eliminarContacto, marcarContacto } from "../actions";
 import ConfirmDelete from "../ConfirmDelete";
+import { fechaHora } from "@/lib/fecha";
 
 export default async function ContactoAdminPage() {
   await requireAdminSession();
@@ -74,7 +75,7 @@ export default async function ContactoAdminPage() {
               <Field k="Correo" v={m.correo} />
               <Field k="Organización" v={m.organizacion} />
               <Field k="Asunto" v={m.asunto} />
-              <Field k="Recibido" v={m.createdAt.toLocaleString("es-GT")} />
+              <Field k="Recibido" v={fechaHora(m.createdAt)} />
             </dl>
             <p style={{ fontSize: 13, color: "#666", margin: "0 0 4px" }}>Mensaje:</p>
             <p style={{ fontSize: 14, whiteSpace: "pre-wrap", marginTop: 0 }}>{m.mensaje}</p>

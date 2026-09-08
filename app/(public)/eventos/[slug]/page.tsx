@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import Albumes, { type Album } from "@/app/components/Albumes";
 import { EVENT_SLUG } from "@/app/site-data";
+import { soloFecha } from "@/lib/fecha";
 
 export const revalidate = 3600;
 
@@ -28,7 +29,7 @@ export async function generateMetadata({
   const e = await getEvento(params.slug);
   if (!e || !e.published) return { title: "Evento no encontrado" };
   const foto = e.albums.flatMap((a) => a.images)[0]?.url;
-  const fecha = e.date.toLocaleDateString("es-GT", { dateStyle: "long" });
+  const fecha = soloFecha(e.date);
   return {
     title: e.title,
     description: `${e.title} · ${fecha} · ${e.location}. ${e.description}`.slice(0, 300),
@@ -63,7 +64,7 @@ export default async function EventoDetallePage({
               {e.title}
             </h1>
             <p style={{ color: "var(--gold)", fontFamily: "var(--font-head)", fontWeight: 700, marginBottom: 14 }}>
-              {e.date.toLocaleDateString("es-GT", { dateStyle: "full" })} · {e.location}
+              {soloFecha(e.date, "full")} · {e.location}
             </p>
             <p style={{ color: "var(--soft)", fontSize: "1.08rem" }}>{e.description}</p>
 

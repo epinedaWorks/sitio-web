@@ -2,6 +2,7 @@ import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { actualizarEstadoPonente, eliminarPonente } from "../actions";
 import ConfirmDelete from "../ConfirmDelete";
+import { fechaHora } from "@/lib/fecha";
 
 export default async function PonentesAdminPage() {
   await requireAdminSession();
@@ -92,7 +93,7 @@ export default async function PonentesAdminPage() {
               <Field k="¿Cómo se enteró?" v={s.comoSeEntero} />
               <Field k="Comentarios" v={s.comentarios} pre />
               <Field k="Autoriza compartir datos con empresas" v={s.compartirDatos ? "Sí" : "No"} />
-              <Field k="Recibida" v={s.createdAt.toLocaleString("es-GT")} />
+              <Field k="Recibida" v={fechaHora(s.createdAt)} />
             </dl>
 
             <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>

@@ -2,6 +2,7 @@ import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { eliminarInscrito, toggleCheckin } from "../actions";
 import ConfirmDelete from "../ConfirmDelete";
+import { fechaHora, soloHora } from "@/lib/fecha";
 
 export default async function InscritosAdminPage() {
   await requireAdminSession();
@@ -62,7 +63,7 @@ export default async function InscritosAdminPage() {
               {r.nombre} · <span style={{ opacity: 0.7 }}>{r.correo}</span> · {r.asistira || "—"}
               {r.checkedInAt && (
                 <span style={{ fontSize: 12, marginLeft: 8, padding: "2px 8px", borderRadius: 999, background: "#159d68", color: "#fff" }}>
-                  ✓ ingresó {r.checkedInAt.toLocaleTimeString("es-GT", { hour: "2-digit", minute: "2-digit" })}
+                  ✓ ingresó {soloHora(r.checkedInAt)}
                 </span>
               )}
               {r.compartirDatos && (
@@ -83,10 +84,10 @@ export default async function InscritosAdminPage() {
               <Field k="Comentarios" v={r.comentarios} pre />
               <Field k="Autoriza compartir datos con empresas" v={r.compartirDatos ? "Sí" : "No"} />
               <Field k="Evento" v={r.event.title} />
-              <Field k="Fecha de inscripción" v={r.createdAt.toLocaleString("es-GT")} />
+              <Field k="Fecha de inscripción" v={fechaHora(r.createdAt)} />
               <Field
                 k="Asistencia"
-                v={r.checkedInAt ? `Ingresó ${r.checkedInAt.toLocaleString("es-GT")}` : "No ha ingresado"}
+                v={r.checkedInAt ? `Ingresó ${fechaHora(r.checkedInAt)}` : "No ha ingresado"}
               />
             </dl>
             <form

@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { fechaHora } from "@/lib/fecha";
 
 // Exporta inscritos o ponentes.
 //   /api/admin/export?tipo=inscritos            -> Excel (.xlsx)
@@ -16,7 +17,7 @@ export async function GET(req: Request) {
     return new Response("Parámetro 'tipo' inválido", { status: 400 });
   }
 
-  const fmt = (d: Date) => d.toLocaleString("es-GT");
+  const fmt = (d: Date) => fechaHora(d);
   let headers: string[];
   let rows: (string | number | boolean | null)[][];
 

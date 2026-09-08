@@ -1,6 +1,7 @@
 import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { crearEvento, togglePublicado } from "../actions";
+import { soloFecha } from "@/lib/fecha";
 
 export default async function EventosAdminPage() {
   await requireAdminSession();
@@ -35,7 +36,7 @@ export default async function EventosAdminPage() {
           {eventos.map((e) => (
             <tr key={e.id}>
               <td style={cell}>{e.title}</td>
-              <td style={cell}>{e.date.toLocaleDateString("es-GT")}</td>
+              <td style={cell}>{soloFecha(e.date)}</td>
               <td style={cell}>{e.slug}</td>
               <td style={cell}>
                 <form

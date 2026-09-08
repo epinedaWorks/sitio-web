@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { soloFecha } from "@/lib/fecha";
 
 export const revalidate = 3600;
 
@@ -60,7 +61,7 @@ export default async function EventosPage() {
                     </span>
                     <h3 style={{ fontSize: "1.4rem", margin: "0 0 6px" }}>{e.title}</h3>
                     <p style={{ color: "var(--gold)", fontSize: "0.9rem", fontWeight: 600 }}>
-                      {e.date.toLocaleDateString("es-GT", { dateStyle: "long" })} · {e.location}
+                      {soloFecha(e.date)} · {e.location}
                     </p>
                     <p style={{ color: "var(--soft)", fontSize: "0.95rem", marginTop: 6 }}>
                       {e.description.slice(0, 160)}

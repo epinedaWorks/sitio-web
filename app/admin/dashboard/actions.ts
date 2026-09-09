@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { getStore } from "@netlify/blobs";
 import { prisma } from "@/lib/prisma";
+import { fechaDesdeInput } from "@/lib/fecha";
 import { requireAdminSession, requireAdminRole } from "@/lib/require-admin";
 import {
   invalidarSettingsCache,
@@ -104,34 +105,76 @@ export async function cambiarPassword(formData: FormData) {
 export async function crearEvento(formData: FormData) {
   await requireAdminSession();
 
-  const title = String(formData.get("title") || "");
-  const slug = String(formData.get("slug") || "");
+  const title = String(formData.get("title") || "").trim();
+  const slug = String(formData.get("slug") || "").trim();
   const date = String(formData.get("date") || "");
-  const location = String(formData.get("location") || "");
-  const description = String(formData.get("description") || "");
+  const location = String(formData.get("location") || "").trim();
+  const description = String(formData.get("description") || "").trim();
 
-  if (!title || !slug || !date) return;
+  if (!title || !slug || !date) redirect("/admin/dashboard/eventos?msg=faltan");
 
-  await prisma.event.create({
-    data: {
-      title,
-      slug,
-      date: new Date(date),
-      location,
-      description,
-      published: formData.get("published") === "on",
-    },
-  });
+  try {
+    await prisma.event.create({
+      data: {
+        title,
+        slug,
+        date: fechaDesdeInput(date),
+        location,
+        description,
+        published: formData.get("published") === "on",
+      },
+    });
+  } catch (e: any) {
+    if (e?.code === "P2002") redirect("/admin/dashboard/eventos?msg=slug");
+    throw e;
+  }
 
   revalidatePath("/admin/dashboard/eventos");
   revalidatePath("/eventos");
+  revalidatePath("/");
+  redirect("/admin/dashboard/eventos?msg=creado");
+}
+
+// Edita un evento existente (título, slug, fecha, lugar, descripción, estado).
+export async function editarEvento(id: string, formData: FormData) {
+  await requireAdminSession();
+
+  const title = String(formData.get("title") || "").trim();
+  const slug = String(formData.get("slug") || "").trim();
+  const date = String(formData.get("date") || "");
+  const location = String(formData.get("location") || "").trim();
+  const description = String(formData.get("description") || "").trim();
+  const published = formData.get("published") === "on";
+
+  if (!title || !slug || !date) redirect("/admin/dashboard/eventos?msg=faltan");
+
+  const antes = await prisma.event.findUnique({ where: { id }, select: { slug: true } });
+
+  try {
+    await prisma.event.update({
+      where: { id },
+      data: { title, slug, date: fechaDesdeInput(date), location, description, published },
+    });
+  } catch (e: any) {
+    if (e?.code === "P2002") redirect("/admin/dashboard/eventos?msg=slug");
+    throw e;
+  }
+
+  revalidatePath("/admin/dashboard/eventos");
+  revalidatePath("/eventos");
+  revalidatePath(`/eventos/${slug}`);
+  if (antes && antes.slug !== slug) revalidatePath(`/eventos/${antes.slug}`);
+  revalidatePath("/");
+  redirect("/admin/dashboard/eventos?msg=guardado");
 }
 
 export async function togglePublicado(eventId: string, published: boolean) {
   await requireAdminSession();
-  await prisma.event.update({ where: { id: eventId }, data: { published } });
+  const e = await prisma.event.update({ where: { id: eventId }, data: { published } });
   revalidatePath("/admin/dashboard/eventos");
   revalidatePath("/eventos");
+  revalidatePath(`/eventos/${e.slug}`);
+  revalidatePath("/");
 }
 
 export async function crearAlbum(formData: FormData) {

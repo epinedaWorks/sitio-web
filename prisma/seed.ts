@@ -147,35 +147,61 @@ async function main() {
     console.log(`  El álbum "${album.title}" ya tiene ${yaTiene} fotos, no se tocan`);
   }
 
-  // ---- Contenedor para los álbumes de otras actividades de la comunidad ----
-  // Es un "evento" sin publicar que solo agrupa álbumes; las fotos se suben
-  // luego desde /admin/dashboard/galeria.
-  const galeria = await prisma.event.upsert({
-    where: { slug: "galeria-comunidad" },
-    update: { title: "Galería de la comunidad", published: false },
-    create: {
-      title: "Galería de la comunidad",
-      slug: "galeria-comunidad",
-      date: new Date("2025-01-01T00:00:00-06:00"),
-      location: "Guatemala",
-      description: "Álbumes de fotos de las actividades de la comunidad.",
-      published: false,
+  // ---- Otras actividades de la comunidad: cada una es su propio evento ----
+  // Cada evento tiene su página compartible (/eventos/<slug>) y un álbum donde
+  // se suben las fotos desde /admin/dashboard/galeria.
+  const ACTIVIDADES = [
+    {
+      slug: "foro-de-ia",
+      title: "Foro de IA",
+      date: new Date("2026-05-15T12:00:00-06:00"),
+      location: "Fundación BI",
+      description: "Foro de IA.",
     },
-  });
-
-  const ALBUMES_ACTIVIDADES = [
-    { title: "Foro de IA", description: "Charlas y panel sobre inteligencia artificial." },
-    { title: "Python After Office", description: "Meetup after office: código, cervezas y networking." },
-    { title: "Pyzzathon", description: "Maratón de código con pizza. Retos en equipo con Python." },
+    {
+      slug: "python-after-office",
+      title: "Python After Office",
+      date: new Date("2025-11-15T12:00:00-06:00"),
+      location: "Universidad Galileo",
+      description: "Charlas varias en un meetup after office de la comunidad.",
+    },
+    {
+      slug: "pyzzathon",
+      title: "Pyzzathon",
+      date: new Date("2026-06-15T12:00:00-06:00"),
+      location: "Improving",
+      description: "Charlas con pizza: una tarde de código, comunidad y buena comida.",
+    },
   ];
-  for (const a of ALBUMES_ACTIVIDADES) {
-    const existe = await prisma.album.findFirst({
-      where: { eventId: galeria.id, title: a.title },
+  for (const a of ACTIVIDADES) {
+    const evento = await prisma.event.upsert({
+      where: { slug: a.slug },
+      update: {}, // no piso datos que ya se hayan ajustado desde el panel
+      create: { ...a, published: true },
     });
+    // El álbum solo se crea si no existe ya uno con ese título (en cualquier evento).
+    const existe = await prisma.album.findFirst({ where: { title: a.title } });
     if (!existe) {
-      await prisma.album.create({ data: { ...a, eventId: galeria.id } });
+      await prisma.album.create({
+        data: { title: a.title, description: a.description, eventId: evento.id },
+      });
       console.log(`  Álbum "${a.title}" creado (sin fotos todavía)`);
     }
+  }
+
+  // Limpieza: el viejo contenedor "galería de la comunidad" ya no se usa.
+  const viejoContenedor = await prisma.event.findUnique({
+    where: { slug: "galeria-comunidad" },
+    include: { albums: true, registrations: true, speakerSubmissions: true },
+  });
+  if (
+    viejoContenedor &&
+    viejoContenedor.albums.length === 0 &&
+    viejoContenedor.registrations.length === 0 &&
+    viejoContenedor.speakerSubmissions.length === 0
+  ) {
+    await prisma.event.delete({ where: { id: viejoContenedor.id } });
+    console.log("  Contenedor 'galeria-comunidad' eliminado (ya no se usa)");
   }
 
   console.log("Datos iniciales listos. Admin: admin@pythonguatemala.org / cambia-esta-clave");

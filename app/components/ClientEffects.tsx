@@ -1,32 +1,43 @@
 "use client";
 
 import { useEffect } from "react";
+import { usePathname } from "next/navigation";
 
 // Reproduce los efectos de scroll del sitio original:
 //  - .reveal  -> aparece al entrar en viewport
 //  - [data-count] -> conteo animado de estadísticas
+//
+// Se vuelve a ejecutar en cada cambio de ruta (usePathname): en una navegación
+// del lado del cliente el DOM de la página nueva se monta pero este efecto no
+// se remonta, así que sin esto los .reveal de la página nueva se quedaban
+// invisibles (opacity:0) y la página parecía vacía.
 export default function ClientEffects() {
+  const pathname = usePathname();
+
   useEffect(() => {
     const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    const reveals = Array.from(document.querySelectorAll<HTMLElement>(".reveal"));
+    // Solo los que aún no se han revelado (los de la página nueva).
+    const reveals = Array.from(document.querySelectorAll<HTMLElement>(".reveal:not(.in)"));
+
+    let io: IntersectionObserver | null = null;
     if (prefersReduced) {
       reveals.forEach((el) => el.classList.add("in"));
     } else {
-      const io = new IntersectionObserver(
+      io = new IntersectionObserver(
         (entries) => {
           entries.forEach((en) => {
             if (en.isIntersecting) {
               en.target.classList.add("in");
-              io.unobserve(en.target);
+              io?.unobserve(en.target);
             }
           });
         },
         { threshold: 0.12 }
       );
-      reveals.forEach((el) => io.observe(el));
+      reveals.forEach((el) => io!.observe(el));
 
-      // por si algo ya está en pantalla al montar
+      // por si algo ya está en pantalla al montar / al llegar de otra página
       requestAnimationFrame(() => {
         reveals.forEach((el) => {
           const r = el.getBoundingClientRect();
@@ -71,8 +82,11 @@ export default function ClientEffects() {
       statsIo.observe(statsEl);
     }
 
-    return () => statsIo?.disconnect();
-  }, []);
+    return () => {
+      io?.disconnect();
+      statsIo?.disconnect();
+    };
+  }, [pathname]);
 
   return null;
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 
 export type AlbumFoto = { url: string; caption: string | null };
 export type Album = {
@@ -8,6 +9,9 @@ export type Album = {
   title: string;
   description: string | null;
   images: AlbumFoto[];
+  // Si el álbum tiene un evento publicado propio, su slug: la tarjeta enlaza a
+  // /eventos/<slug> (URL compartible) en vez de abrir el modal.
+  slug?: string | null;
 };
 
 // Miniatura para la retícula:
@@ -84,13 +88,8 @@ export default function Albumes({
       <div className="album-grid">
         {albums.map((a) => {
           const vacio = a.images.length === 0;
-          return (
-            <button
-              key={a.id}
-              className="album-card reveal"
-              disabled={vacio}
-              onClick={() => !vacio && setAbierto(a)}
-            >
+          const interior = (
+            <>
               {vacio ? (
                 <div className="album-cover empty">📷</div>
               ) : (
@@ -105,6 +104,32 @@ export default function Albumes({
                 <h5>{a.title}</h5>
                 {a.description && <p>{a.description}</p>}
               </div>
+            </>
+          );
+
+          // Álbum con evento publicado: enlace a su página (URL compartible).
+          if (a.slug && !vacio) {
+            return (
+              <Link
+                key={a.id}
+                href={`/eventos/${a.slug}`}
+                className="album-card reveal"
+                style={{ textDecoration: "none" }}
+              >
+                {interior}
+              </Link>
+            );
+          }
+
+          // Resto: abre el modal con la galería.
+          return (
+            <button
+              key={a.id}
+              className="album-card reveal"
+              disabled={vacio}
+              onClick={() => !vacio && setAbierto(a)}
+            >
+              {interior}
             </button>
           );
         })}

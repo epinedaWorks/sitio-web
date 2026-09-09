@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { EVENT_SLUG } from "../site-data";
 
 type Modo = null | "inscripcion" | "ponente" | "contacto";
@@ -17,7 +17,6 @@ const RUTA_A_MODO: Record<string, Exclude<Modo, null>> = {
 
 export default function RegistroModales() {
   const pathname = usePathname();
-  const router = useRouter();
   const [modo, setModo] = useState<Modo>(null);
   const [estado, setEstado] = useState<Estado>("idle");
   const [error, setError] = useState("");
@@ -36,9 +35,15 @@ export default function RegistroModales() {
 
   const cerrar = useCallback(() => {
     setModo(null);
-    // Si venías de una URL corta (/inscripcion, /conferencistas…), vuelve al inicio.
-    if (pathname && RUTA_A_MODO[pathname]) router.replace("/");
-  }, [pathname, router]);
+    // Si venías de una URL corta (/inscripcion, /conferencistas…), limpia la URL
+    // a "/" SIN navegar: la home ya está renderizada debajo del modal. Una
+    // navegación de Next hacia "/" (que reusa el mismo componente que estas
+    // rutas) dejaría el cuerpo de la página en blanco. history.replaceState se
+    // integra con el router de Next 14.1+ y actualiza usePathname().
+    if (pathname && RUTA_A_MODO[pathname] && typeof window !== "undefined") {
+      window.history.replaceState(window.history.state, "", "/");
+    }
+  }, [pathname]);
 
   // Abre el formulario correspondiente si la URL es una de las cortas.
   useEffect(() => {

@@ -301,21 +301,23 @@ export async function eliminarPonente(id: string) {
   revalidatePath("/admin/dashboard/ponentes");
 }
 
+const ES_CORREO_ANUNCIO = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) && s.length <= 254;
+
 // ---- Anuncios masivos (solo ADMIN): un mensaje a asistentes y/o ponentes ----
 // de un evento, o una prueba solo a quien lo envía. Cada persona recibe su
 // propio correo (nunca se juntan varios destinatarios en un mismo "para").
+// La lista de destinatarios la arma el panel en el navegador (a partir de los
+// inscritos/ponentes del evento) y el admin puede quitar o agregar correos a
+// mano antes de enviar; el servidor recibe esa lista ya definitiva.
 export async function enviarAnuncio(formData: FormData) {
   const session = await requireAdminRole();
 
   const eventId = String(formData.get("eventId") || "");
-  const incluirAsistentes = formData.get("asistentes") === "on";
-  const incluirPonentes = formData.get("ponentes") === "on";
-  const estadoPonentes = String(formData.get("estadoPonentes") || "TODOS");
   const soloPrueba = formData.get("prueba") === "on";
   const asunto = String(formData.get("asunto") || "").trim();
   const mensaje = String(formData.get("mensaje") || "").trim();
 
-  if (!eventId || !asunto || !mensaje || (!incluirAsistentes && !incluirPonentes && !soloPrueba)) {
+  if (!eventId || !asunto || !mensaje) {
     redirect("/admin/dashboard/anuncios?msg=faltan");
   }
 
@@ -323,38 +325,31 @@ export async function enviarAnuncio(formData: FormData) {
   if (!evento) redirect("/admin/dashboard/anuncios?msg=error");
 
   const correoAdmin = session.user?.email || "";
-  let destinatarios: DestinatarioAnuncio[] = [];
+  let destinatarios: DestinatarioAnuncio[];
 
   if (soloPrueba) {
     if (!correoAdmin) redirect("/admin/dashboard/anuncios?msg=error");
     destinatarios = [{ correo: correoAdmin, nombre: session.user?.name || "Admin" }];
   } else {
-    if (incluirAsistentes) {
-      const regs = await prisma.attendeeRegistration.findMany({
-        where: { eventId },
-        select: { correo: true, nombre: true },
-      });
-      destinatarios.push(...regs);
+    let lista: unknown = [];
+    try {
+      lista = JSON.parse(String(formData.get("destinatariosJson") || "[]"));
+    } catch {
+      lista = [];
     }
-    if (incluirPonentes) {
-      const where: { eventId: string; status?: "PENDIENTE" | "ACEPTADA" | "RECHAZADA" } = { eventId };
-      if (estadoPonentes === "ACEPTADA" || estadoPonentes === "PENDIENTE" || estadoPonentes === "RECHAZADA") {
-        where.status = estadoPonentes;
-      }
-      const subs = await prisma.speakerSubmission.findMany({
-        where,
-        select: { correo: true, nombre: true },
-      });
-      destinatarios.push(...subs);
-    }
-    // De-duplica por correo (alguien puede estar inscrito y además haber postulado).
     const vistos = new Set<string>();
-    destinatarios = destinatarios.filter((d) => {
-      const k = d.correo.toLowerCase();
-      if (vistos.has(k)) return false;
-      vistos.add(k);
-      return true;
-    });
+    destinatarios = (Array.isArray(lista) ? lista : [])
+      .filter(
+        (d): d is { correo: string; nombre?: string } =>
+          !!d && typeof d.correo === "string" && ES_CORREO_ANUNCIO(d.correo.trim())
+      )
+      .map((d) => ({ correo: d.correo.trim(), nombre: (d.nombre || "").trim() || d.correo.trim() }))
+      .filter((d) => {
+        const k = d.correo.toLowerCase();
+        if (vistos.has(k)) return false;
+        vistos.add(k);
+        return true;
+      });
   }
 
   if (destinatarios.length === 0) redirect("/admin/dashboard/anuncios?msg=vacio");

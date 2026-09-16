@@ -12,9 +12,9 @@ const MENSAJES: Record<string, { ok: boolean; texto: (n?: string, f?: string) =>
   prueba: { ok: true, texto: () => "Prueba enviada a tu correo." },
   faltan: {
     ok: false,
-    texto: () => "Faltan campos: elige un evento, a quién enviarlo (o marca prueba), asunto y mensaje.",
+    texto: () => "Faltan campos: elige un evento, asunto y mensaje (y al menos un destinatario si no es prueba).",
   },
-  vacio: { ok: false, texto: () => "Nadie cumple esos filtros para ese evento — no se envió nada." },
+  vacio: { ok: false, texto: () => "No quedó ningún destinatario válido — no se envió nada." },
   error: { ok: false, texto: () => "Ocurrió un error. Intenta de nuevo." },
 };
 
@@ -29,26 +29,27 @@ export default async function AnunciosPage({
     orderBy: { date: "desc" },
     select: { id: true, title: true, slug: true },
   });
-  const [asistentesPorEvento, ponentesPorEvento] = await Promise.all([
-    prisma.attendeeRegistration.groupBy({ by: ["eventId"], _count: true }),
-    prisma.speakerSubmission.groupBy({ by: ["eventId", "status"], _count: true }),
+  const [asistentes, ponentes] = await Promise.all([
+    prisma.attendeeRegistration.findMany({ select: { eventId: true, correo: true, nombre: true } }),
+    prisma.speakerSubmission.findMany({ select: { eventId: true, correo: true, nombre: true, status: true } }),
   ]);
 
   const datos = eventos.map((e) => {
-    const asistentes = asistentesPorEvento.find((a) => a.eventId === e.id)?._count ?? 0;
-    const porEstado = { PENDIENTE: 0, ACEPTADA: 0, RECHAZADA: 0 };
-    ponentesPorEvento
-      .filter((p) => p.eventId === e.id)
-      .forEach((p) => {
-        porEstado[p.status] = p._count;
-      });
+    const asis = asistentes.filter((a) => a.eventId === e.id).map(({ correo, nombre }) => ({ correo, nombre }));
+    const ponE = ponentes.filter((p) => p.eventId === e.id);
+    const porEstado = (st?: "PENDIENTE" | "ACEPTADA" | "RECHAZADA") =>
+      ponE.filter((p) => !st || p.status === st).map(({ correo, nombre }) => ({ correo, nombre }));
     return {
       id: e.id,
       title: e.title,
       slug: e.slug,
-      asistentes,
-      ponentesTotal: porEstado.PENDIENTE + porEstado.ACEPTADA + porEstado.RECHAZADA,
-      ...porEstado,
+      asistentes: asis,
+      ponentes: {
+        TODOS: porEstado(),
+        PENDIENTE: porEstado("PENDIENTE"),
+        ACEPTADA: porEstado("ACEPTADA"),
+        RECHAZADA: porEstado("RECHAZADA"),
+      },
     };
   });
 
@@ -59,7 +60,8 @@ export default async function AnunciosPage({
       <h1>Anuncios</h1>
       <p style={{ opacity: 0.75, fontSize: 14 }}>
         Manda un correo a los asistentes inscritos y/o a los conferencistas, talleristas y expositores de
-        un evento. Cada quien recibe su propio correo — nadie ve la lista de los demás.
+        un evento. Puedes revisar la lista de correos y quitar o agregar alguno antes de enviar. Cada quien
+        recibe su propio correo — nadie ve la lista de los demás.
       </p>
 
       {aviso && (

@@ -1,51 +1,90 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useState } from "react";
+import { useFormStatus } from "react-dom";
 
+type Persona = { correo: string; nombre: string };
 type EstadoPonente = "TODOS" | "ACEPTADA" | "PENDIENTE" | "RECHAZADA";
 
-type EventoConteo = {
+type EventoDatos = {
   id: string;
   title: string;
   slug: string;
-  asistentes: number;
-  ponentesTotal: number;
-  PENDIENTE: number;
-  ACEPTADA: number;
-  RECHAZADA: number;
+  asistentes: Persona[];
+  ponentes: Record<EstadoPonente, Persona[]>;
 };
+
+const ES_CORREO = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
+
+function dedupe(lista: Persona[]): Persona[] {
+  const vistos = new Set<string>();
+  return lista.filter((p) => {
+    const k = p.correo.toLowerCase();
+    if (!p.correo || vistos.has(k)) return false;
+    vistos.add(k);
+    return true;
+  });
+}
+
+// Vive DENTRO del <form> para que useFormStatus refleje el envío real
+// (incluida la redirección al terminar) en vez de un estado propio que
+// nunca se resetea si el componente no se vuelve a montar.
+function BotonEnviar({ prueba, total }: { prueba: boolean; total: number }) {
+  const { pending } = useFormStatus();
+  return (
+    <button type="submit" disabled={pending || (!prueba && total === 0)} style={{ fontWeight: 700, padding: "8px 16px" }}>
+      {pending
+        ? "Enviando…"
+        : prueba
+          ? "Enviar prueba a mi correo"
+          : `Enviar a ${total} persona${total === 1 ? "" : "s"}`}
+    </button>
+  );
+}
 
 export default function AnuncioForm({
   eventos,
   action,
 }: {
-  eventos: EventoConteo[];
+  eventos: EventoDatos[];
   action: (formData: FormData) => void | Promise<void>;
 }) {
   const [eventId, setEventId] = useState(eventos[0]?.id || "");
-  const [asistentes, setAsistentes] = useState(true);
-  const [ponentes, setPonentes] = useState(true);
+  const [asistentesOn, setAsistentesOn] = useState(true);
+  const [ponentesOn, setPonentesOn] = useState(true);
   const [estadoPonentes, setEstadoPonentes] = useState<EstadoPonente>("TODOS");
   const [prueba, setPrueba] = useState(false);
-  const [enviando, setEnviando] = useState(false);
+  const [lista, setLista] = useState<Persona[]>([]);
+  const [nuevoCorreo, setNuevoCorreo] = useState("");
+  const [nuevoNombre, setNuevoNombre] = useState("");
 
   const evento = eventos.find((e) => e.id === eventId);
 
-  const conteoPonentes = (e?: EventoConteo) => {
-    if (!e) return 0;
-    return estadoPonentes === "TODOS" ? e.ponentesTotal : e[estadoPonentes];
-  };
-
-  // Estimado: no descuenta a quien está inscrito Y postuló a la vez (el envío
-  // real sí lo hace, así que el número real puede ser un poco menor).
-  const totalAprox = useMemo(() => {
-    if (!evento) return 0;
-    let n = 0;
-    if (asistentes) n += evento.asistentes;
-    if (ponentes) n += conteoPonentes(evento);
-    return n;
+  // Recalcula la lista de destinatarios cada vez que cambia el evento o los
+  // filtros de audiencia (esto SOBRESCRIBE ediciones manuales — es la forma
+  // más simple de que "a quién le llega" arriba y la lista de abajo no se
+  // desincronicen).
+  useEffect(() => {
+    if (!evento) {
+      setLista([]);
+      return;
+    }
+    let base: Persona[] = [];
+    if (asistentesOn) base = base.concat(evento.asistentes);
+    if (ponentesOn) base = base.concat(evento.ponentes[estadoPonentes]);
+    setLista(dedupe(base));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [evento, asistentes, ponentes, estadoPonentes]);
+  }, [eventId, asistentesOn, ponentesOn, estadoPonentes]);
+
+  const quitar = (correo: string) => setLista((l) => l.filter((p) => p.correo !== correo));
+
+  const agregar = () => {
+    const correo = nuevoCorreo.trim().toLowerCase();
+    if (!ES_CORREO(correo)) return;
+    setLista((l) => dedupe([...l, { correo, nombre: nuevoNombre.trim() || correo.split("@")[0] }]));
+    setNuevoCorreo("");
+    setNuevoNombre("");
+  };
 
   if (eventos.length === 0) {
     return <p style={{ opacity: 0.7 }}>Aún no hay eventos. Crea uno en Eventos primero.</p>;
@@ -55,23 +94,20 @@ export default function AnuncioForm({
     <form
       action={action}
       onSubmit={(e) => {
-        if (prueba) {
-          setEnviando(true);
-          return;
-        }
+        if (prueba) return;
         const ok = window.confirm(
-          `Vas a enviar este correo a aproximadamente ${totalAprox} persona${
-            totalAprox === 1 ? "" : "s"
+          `Vas a enviar este correo a ${lista.length} persona${
+            lista.length === 1 ? "" : "s"
           }. No se puede deshacer. ¿Continuar?`
         );
-        if (!ok) {
-          e.preventDefault();
-          return;
-        }
-        setEnviando(true);
+        if (!ok) e.preventDefault();
       }}
       style={{ display: "grid", gap: 14, marginTop: 20 }}
     >
+      {/* La lista definitiva (ya editada a mano) viaja como JSON; el servidor
+          la usa tal cual, no vuelve a calcularla con los checkboxes. */}
+      <input type="hidden" name="destinatariosJson" value={JSON.stringify(lista)} />
+
       <label style={{ fontSize: 13, fontWeight: 600 }}>
         Evento
         <select
@@ -93,39 +129,89 @@ export default function AnuncioForm({
         <label style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 8 }}>
           <input
             type="checkbox"
-            name="asistentes"
-            checked={asistentes}
-            onChange={(e) => setAsistentes(e.target.checked)}
+            checked={asistentesOn}
+            onChange={(e) => setAsistentesOn(e.target.checked)}
           />
-          Asistentes inscritos ({evento?.asistentes ?? 0})
+          Asistentes inscritos ({evento?.asistentes.length ?? 0})
         </label>
 
         <label style={{ fontSize: 14, display: "flex", alignItems: "center", gap: 8 }}>
           <input
             type="checkbox"
-            name="ponentes"
-            checked={ponentes}
-            onChange={(e) => setPonentes(e.target.checked)}
+            checked={ponentesOn}
+            onChange={(e) => setPonentesOn(e.target.checked)}
           />
-          Conferencistas, talleristas y expositores ({conteoPonentes(evento)})
+          Conferencistas, talleristas y expositores ({evento?.ponentes[estadoPonentes].length ?? 0})
         </label>
 
-        {ponentes && (
+        {ponentesOn && (
           <label style={{ fontSize: 13, marginLeft: 26, opacity: 0.85 }}>
             Estado:{" "}
             <select
-              name="estadoPonentes"
               value={estadoPonentes}
               onChange={(e) => setEstadoPonentes(e.target.value as EstadoPonente)}
               style={{ padding: 3 }}
             >
-              <option value="TODOS">Todos ({evento?.ponentesTotal ?? 0})</option>
-              <option value="ACEPTADA">Solo aceptados ({evento?.ACEPTADA ?? 0})</option>
-              <option value="PENDIENTE">Solo pendientes ({evento?.PENDIENTE ?? 0})</option>
-              <option value="RECHAZADA">Solo rechazados ({evento?.RECHAZADA ?? 0})</option>
+              <option value="TODOS">Todos ({evento?.ponentes.TODOS.length ?? 0})</option>
+              <option value="ACEPTADA">Solo aceptados ({evento?.ponentes.ACEPTADA.length ?? 0})</option>
+              <option value="PENDIENTE">Solo pendientes ({evento?.ponentes.PENDIENTE.length ?? 0})</option>
+              <option value="RECHAZADA">Solo rechazados ({evento?.ponentes.RECHAZADA.length ?? 0})</option>
             </select>
           </label>
         )}
+      </div>
+
+      {/* Lista editable de destinatarios */}
+      <div style={{ border: "1px solid #e2e2e2", borderRadius: 10, padding: 12 }}>
+        <strong style={{ fontSize: 13 }}>Destinatarios ({lista.length})</strong>
+        <div style={{ maxHeight: 220, overflowY: "auto", display: "grid", gap: 4, marginTop: 8 }}>
+          {lista.length === 0 && <p style={{ fontSize: 13, opacity: 0.6 }}>Nadie en la lista todavía.</p>}
+          {lista.map((p) => (
+            <div
+              key={p.correo}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                fontSize: 13,
+                padding: "3px 8px",
+                borderRadius: 6,
+                background: "#f7f7f7",
+              }}
+            >
+              <span style={{ flex: 1, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {p.nombre} · <span style={{ opacity: 0.65 }}>{p.correo}</span>
+              </span>
+              <button
+                type="button"
+                onClick={() => quitar(p.correo)}
+                title="Quitar de la lista"
+                style={{ border: 0, background: "none", cursor: "pointer", color: "#c0392b", fontWeight: 700 }}
+              >
+                ✕
+              </button>
+            </div>
+          ))}
+        </div>
+        <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+          <input
+            placeholder="correo@ejemplo.com"
+            value={nuevoCorreo}
+            onChange={(e) => setNuevoCorreo(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), agregar())}
+            style={{ flex: 1, minWidth: 160, padding: 5 }}
+          />
+          <input
+            placeholder="Nombre (opcional)"
+            value={nuevoNombre}
+            onChange={(e) => setNuevoNombre(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && (e.preventDefault(), agregar())}
+            style={{ width: 140, padding: 5 }}
+          />
+          <button type="button" onClick={agregar} style={{ padding: "5px 10px" }}>
+            + Agregar
+          </button>
+        </div>
       </div>
 
       <label style={{ fontSize: 13, fontWeight: 600 }}>
@@ -161,13 +247,7 @@ export default function AnuncioForm({
       </label>
 
       <div>
-        <button type="submit" disabled={enviando} style={{ fontWeight: 700, padding: "8px 16px" }}>
-          {enviando
-            ? "Enviando…"
-            : prueba
-              ? "Enviar prueba a mi correo"
-              : `Enviar a ${totalAprox} persona${totalAprox === 1 ? "" : "s"}`}
-        </button>
+        <BotonEnviar prueba={prueba} total={lista.length} />
       </div>
     </form>
   );

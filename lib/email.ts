@@ -72,33 +72,19 @@ function layout(titulo: string, cuerpo: string) {
   return `<!DOCTYPE html>
 <html lang="es"><head><meta charset="utf-8" />
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /></head>
-<body style="margin:0;background:#f4f4f4;padding:16px">
+<body style="margin:0;background:#f4f4f4;padding:20px 16px">
   <div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:560px;margin:0 auto;color:#1a1a1a">
-    <div style="background:#0a1310;color:#f4eee1;padding:20px 24px;border-radius:12px 12px 0 0">
-      <strong style="font-size:16px">&#128013; Comunidad Python Guatemala</strong>
+    <div style="background:#0a1310;color:#f4eee1;padding:22px 24px;border-radius:14px 14px 0 0;border-bottom:3px solid #ffc23c">
+      <strong style="font-size:17px;letter-spacing:0.01em">&#128013; Comunidad Python Guatemala</strong>
     </div>
-    <div style="background:#fff;border:1px solid #e5e5e5;border-top:none;padding:24px;border-radius:0 0 12px 12px">
-      <h2 style="margin:0 0 12px;font-size:18px">${esc(titulo)}</h2>
+    <div style="background:#fff;border:1px solid #e5e5e5;border-top:none;padding:26px 24px;border-radius:0 0 14px 14px;box-shadow:0 1px 3px rgba(0,0,0,0.04)">
+      <h2 style="margin:0 0 14px;font-size:19px;color:#0a1310">${esc(titulo)}</h2>
       ${cuerpo}
     </div>
-  </div>
-</body></html>`;
-}
-
-// Versión sin "cara de plantilla" (sin banner de color, sin logo grande) para
-// los anuncios que le llegan a una persona real: se ve más como un correo
-// personal normal. Gmail (y otros) usan pistas visuales como esas para
-// decidir si algo va a Promociones — esto ayuda, aunque no lo garantiza (la
-// reputación del dominio y cuánta gente abre/mueve estos correos también
-// pesa, y eso mejora solo con el tiempo).
-function layoutSencillo(cuerpo: string): string {
-  return `<!DOCTYPE html>
-<html lang="es"><head><meta charset="utf-8" />
-<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /></head>
-<body style="margin:0;background:#ffffff;padding:0">
-  <div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#1a1a1a;font-size:15px;line-height:1.65">
-    ${cuerpo}
-    <p style="margin-top:26px;color:#888;font-size:13px">— Comunidad Python Guatemala</p>
+    <p style="text-align:center;color:#999;font-size:12px;margin:18px 0 0">
+      Comunidad Python Guatemala ·
+      <a href="https://pythonguatemala.dev" style="color:#159d68;text-decoration:none">pythonguatemala.dev</a>
+    </p>
   </div>
 </body></html>`;
 }
@@ -367,7 +353,7 @@ export async function enviarAnuncioMasivo(opts: {
   const TEAM_LIST = await getCorreosEquipo();
   // Marca invisible al pie: para poder comprobar, en un correo ya recibido,
   // con qué versión del código y a qué hora se generó de verdad.
-  const html = (nombre: string) => layoutSencillo(parrafos(personaliza(opts.mensaje, nombre)));
+  const html = (nombre: string) => layout(opts.asunto, parrafos(personaliza(opts.mensaje, nombre)));
 
   const enviarUno = async (d: DestinatarioAnuncio): Promise<boolean> => {
     try {

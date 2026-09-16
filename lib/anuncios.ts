@@ -9,27 +9,6 @@ export type PersonaAnuncio = { correo: string; nombre: string };
 export const ES_CORREO_ANUNCIO = (s: string) =>
   /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) && s.length <= 254;
 
-// Convierte el texto del campo "¿A qué correos?" en una lista de personas.
-// Admite dos formas por entrada, separadas por coma, punto y coma o salto
-// de línea:
-//   correo@dominio.com
-//   Nombre Apellido <correo@dominio.com>   (para probar cómo se ve {{nombre}})
-// Si no se da nombre, se usa la parte del correo antes de la @.
-export function parseDestinatariosTexto(texto: string): PersonaAnuncio[] {
-  return texto
-    .split(/[,;\n]+/)
-    .map((s) => s.trim())
-    .filter(Boolean)
-    .map((entrada): PersonaAnuncio | null => {
-      const m = entrada.match(/^(.*)<([^<>]+)>\s*$/);
-      const correo = (m ? m[2] : entrada).trim();
-      if (!ES_CORREO_ANUNCIO(correo)) return null;
-      const nombre = (m ? m[1].trim().replace(/^["']|["']$/g, "") : "") || correo.split("@")[0];
-      return { correo, nombre };
-    })
-    .filter((d): d is PersonaAnuncio => d !== null);
-}
-
 export function dedupePorCorreo(lista: PersonaAnuncio[]): PersonaAnuncio[] {
   const vistos = new Set<string>();
   return lista.filter((d) => {

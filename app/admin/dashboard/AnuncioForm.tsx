@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
-import { ES_CORREO_ANUNCIO as ES_CORREO, parseDestinatariosTexto, dedupePorCorreo as dedupe } from "@/lib/anuncios";
+import { ES_CORREO_ANUNCIO as ES_CORREO, dedupePorCorreo as dedupe } from "@/lib/anuncios";
 
 type Persona = { correo: string; nombre: string };
 type EstadoPonente = "TODOS" | "ACEPTADA" | "PENDIENTE" | "RECHAZADA";
@@ -18,46 +18,31 @@ type EventoDatos = {
 // Vive DENTRO del <form> para que useFormStatus refleje el envío real
 // (incluida la redirección al terminar) en vez de un estado propio que
 // nunca se resetea si el componente no se vuelve a montar.
-function BotonEnviar({ prueba, total, totalPrueba }: { prueba: boolean; total: number; totalPrueba: number }) {
+function BotonEnviar({ prueba, total }: { prueba: boolean; total: number }) {
   const { pending } = useFormStatus();
   return (
-    <button
-      type="submit"
-      disabled={pending || (prueba ? totalPrueba === 0 : total === 0)}
-      style={{ fontWeight: 700, padding: "8px 16px" }}
-    >
-      {pending
-        ? "Enviando…"
-        : prueba
-          ? `Enviar prueba a ${totalPrueba} ${totalPrueba === 1 ? "dirección" : "direcciones"}`
-          : `Enviar a ${total} persona${total === 1 ? "" : "s"}`}
+    <button type="submit" disabled={pending || total === 0} style={{ fontWeight: 700, padding: "8px 16px" }}>
+      {pending ? "Enviando…" : `Enviar${prueba ? " PRUEBA" : ""} a ${total} persona${total === 1 ? "" : "s"}`}
     </button>
   );
-}
-
-// Cuenta cuántas direcciones válidas hay en el campo de prueba (separadas
-// por coma, punto y coma, espacio o salto de línea) — solo para el texto
-// del botón; la validación y el parseo de verdad ocurren igual en el servidor
-// (misma función, importada de lib/anuncios).
-function contarCorreos(texto: string): number {
-  return parseDestinatariosTexto(texto).length;
 }
 
 export default function AnuncioForm({
   eventos,
   action,
   correoAdmin = "",
+  nombreAdmin = "",
 }: {
   eventos: EventoDatos[];
   action: (formData: FormData) => void | Promise<void>;
   correoAdmin?: string;
+  nombreAdmin?: string;
 }) {
   const [eventId, setEventId] = useState(eventos[0]?.id || "");
   const [asistentesOn, setAsistentesOn] = useState(true);
   const [ponentesOn, setPonentesOn] = useState(true);
   const [estadoPonentes, setEstadoPonentes] = useState<EstadoPonente>("TODOS");
   const [prueba, setPrueba] = useState(false);
-  const [correosPrueba, setCorreosPrueba] = useState(correoAdmin);
   const [lista, setLista] = useState<Persona[]>([]);
   const [nuevoCorreo, setNuevoCorreo] = useState("");
   const [nuevoNombre, setNuevoNombre] = useState("");
@@ -90,6 +75,14 @@ export default function AnuncioForm({
     setNuevoNombre("");
   };
 
+  // Atajo: vacía la lista, deja solo al admin, y marca la casilla de prueba.
+  // Así se prueba con UNA sola lista (la de abajo) en vez de un campo aparte.
+  const probarSoloConmigo = () => {
+    if (!correoAdmin) return;
+    setLista([{ correo: correoAdmin, nombre: nombreAdmin || correoAdmin.split("@")[0] }]);
+    setPrueba(true);
+  };
+
   if (eventos.length === 0) {
     return <p style={{ opacity: 0.7 }}>Aún no hay eventos. Crea uno en Eventos primero.</p>;
   }
@@ -98,18 +91,22 @@ export default function AnuncioForm({
     <form
       action={action}
       onSubmit={(e) => {
-        if (prueba) return;
         const ok = window.confirm(
-          `Vas a enviar este correo a ${lista.length} persona${
-            lista.length === 1 ? "" : "s"
-          }. No se puede deshacer. ¿Continuar?`
+          prueba
+            ? `Vas a enviar una PRUEBA (con [PRUEBA] en el asunto) a ${lista.length} persona${
+                lista.length === 1 ? "" : "s"
+              }. ¿Continuar?`
+            : `Vas a enviar este correo a ${lista.length} persona${
+                lista.length === 1 ? "" : "s"
+              }. No se puede deshacer. ¿Continuar?`
         );
         if (!ok) e.preventDefault();
       }}
       style={{ display: "grid", gap: 14, marginTop: 20 }}
     >
-      {/* La lista definitiva (ya editada a mano) viaja como JSON; el servidor
-          la usa tal cual, no vuelve a calcularla con los checkboxes. */}
+      {/* La lista de abajo (ya editada a mano si hizo falta) es la ÚNICA
+          fuente de a quién le llega — tanto en un envío real como en una
+          prueba. Viaja como JSON; el servidor la usa tal cual. */}
       <input type="hidden" name="destinatariosJson" value={JSON.stringify(lista)} />
 
       <label style={{ fontSize: 13, fontWeight: 600 }}>
@@ -165,9 +162,16 @@ export default function AnuncioForm({
         )}
       </div>
 
-      {/* Lista editable de destinatarios */}
+      {/* Lista editable de destinatarios — la única que existe */}
       <div style={{ border: "1px solid #e2e2e2", borderRadius: 10, padding: 12 }}>
-        <strong style={{ fontSize: 13 }}>Destinatarios ({lista.length})</strong>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
+          <strong style={{ fontSize: 13 }}>Destinatarios ({lista.length})</strong>
+          {correoAdmin && (
+            <button type="button" onClick={probarSoloConmigo} style={{ fontSize: 12, padding: "4px 10px" }}>
+              Vaciar y probar solo conmigo
+            </button>
+          )}
+        </div>
         <div style={{ maxHeight: 220, overflowY: "auto", display: "grid", gap: 4, marginTop: 8 }}>
           {lista.length === 0 && <p style={{ fontSize: 13, opacity: 0.6 }}>Nadie en la lista todavía.</p>}
           {lista.map((p) => (
@@ -216,6 +220,9 @@ export default function AnuncioForm({
             + Agregar
           </button>
         </div>
+        <p style={{ fontSize: 12, opacity: 0.6, marginTop: 8, marginBottom: 0 }}>
+          Esta es la lista real: a quien esté aquí le llega, sea prueba o envío real.
+        </p>
       </div>
 
       <label style={{ fontSize: 13, fontWeight: 600 }}>
@@ -240,36 +247,19 @@ export default function AnuncioForm({
           style={{ display: "block", width: "100%", marginTop: 4, padding: 8, fontFamily: "inherit", fontSize: 14 }}
         />
         <span style={{ fontSize: 12, opacity: 0.65 }}>
-          Usa <code>{"{{nombre}}"}</code> para que salga el nombre de cada quien. Deja una línea en blanco
-          entre párrafos.
+          Usa <code>{"{{nombre}}"}</code> para que salga el nombre de cada quien (el que se ve en la lista
+          de arriba). Deja una línea en blanco entre párrafos.
         </span>
       </label>
 
-      <div style={{ border: "1px solid #e2e2e2", borderRadius: 10, padding: 14 }}>
-        <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
-          <input type="checkbox" name="prueba" checked={prueba} onChange={(e) => setPrueba(e.target.checked)} />
-          Enviar solo una prueba (no le llega a nadie de la lista de arriba)
-        </label>
-        {prueba && (
-          <label style={{ fontSize: 13, marginTop: 10, display: "block" }}>
-            ¿A qué correos?
-            <input
-              name="correosPrueba"
-              value={correosPrueba}
-              onChange={(e) => setCorreosPrueba(e.target.value)}
-              placeholder="tucorreo@ejemplo.com, María López <otro@gmail.com>"
-              style={{ display: "block", width: "100%", marginTop: 4, padding: 6 }}
-            />
-            <span style={{ fontSize: 12, opacity: 0.65 }}>
-              Separa varias con coma. Si solo pones el correo, {"{{nombre}}"} sale como lo que va antes de
-              la @ — para ver el nombre real, escribe <code>Nombre &lt;correo@ejemplo.com&gt;</code>.
-            </span>
-          </label>
-        )}
-      </div>
+      <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+        <input type="checkbox" name="prueba" checked={prueba} onChange={(e) => setPrueba(e.target.checked)} />
+        Marcar como prueba (agrega &quot;[PRUEBA]&quot; al asunto y no le avisa al equipo — pero{" "}
+        <b>igual le llega a quien esté en la lista de arriba</b>)
+      </label>
 
       <div>
-        <BotonEnviar prueba={prueba} total={lista.length} totalPrueba={contarCorreos(correosPrueba)} />
+        <BotonEnviar prueba={prueba} total={lista.length} />
       </div>
     </form>
   );

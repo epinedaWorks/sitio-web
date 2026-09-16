@@ -11,11 +11,11 @@ const MENSAJES: Record<string, { ok: boolean; texto: (n?: string, f?: string) =>
   },
   prueba: {
     ok: true,
-    texto: (n) => `Prueba enviada a ${n} ${n === "1" ? "dirección" : "direcciones"}.`,
+    texto: (n) => `Prueba enviada (con [PRUEBA] en el asunto) a ${n} persona${n === "1" ? "" : "s"}.`,
   },
   faltan: {
     ok: false,
-    texto: () => "Faltan campos: elige un evento, asunto y mensaje (y al menos un destinatario si no es prueba).",
+    texto: () => "Faltan campos: elige un evento, al menos un destinatario, asunto y mensaje.",
   },
   vacio: { ok: false, texto: () => "No quedó ningún destinatario válido — no se envió nada." },
   error: { ok: false, texto: () => "Ocurrió un error. Intenta de nuevo." },
@@ -63,8 +63,9 @@ export default async function AnunciosPage({
       <h1>Anuncios</h1>
       <p style={{ opacity: 0.75, fontSize: 14 }}>
         Manda un correo a los asistentes inscritos y/o a los conferencistas, talleristas y expositores de
-        un evento. Puedes revisar la lista de correos y quitar o agregar alguno antes de enviar. Cada quien
-        recibe su propio correo — nadie ve la lista de los demás.
+        un evento. Puedes revisar la lista de correos, quitar o agregar alguno antes de enviar — esa lista
+        es la que de verdad recibe el correo, tanto si lo marcas como prueba como si no. Cada quien recibe
+        su propio correo — nadie ve la lista de los demás.
       </p>
 
       {aviso && (
@@ -81,7 +82,12 @@ export default async function AnunciosPage({
         </p>
       )}
 
-      <AnuncioForm eventos={datos} action={enviarAnuncio} correoAdmin={session.user?.email || ""} />
+      <AnuncioForm
+        eventos={datos}
+        action={enviarAnuncio}
+        correoAdmin={session.user?.email || ""}
+        nombreAdmin={session.user?.name || ""}
+      />
     </main>
   );
 }

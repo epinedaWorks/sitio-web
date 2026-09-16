@@ -7,7 +7,7 @@ import { getStore } from "@netlify/blobs";
 import { prisma } from "@/lib/prisma";
 import { fechaDesdeInput } from "@/lib/fecha";
 import { enviarAnuncioMasivo, type DestinatarioAnuncio } from "@/lib/email";
-import { ES_CORREO_ANUNCIO, parseDestinatariosTexto, dedupePorCorreo } from "@/lib/anuncios";
+import { ES_CORREO_ANUNCIO, dedupePorCorreo } from "@/lib/anuncios";
 import { requireAdminSession, requireAdminRole } from "@/lib/require-admin";
 import {
   invalidarSettingsCache,
@@ -303,12 +303,12 @@ export async function eliminarPonente(id: string) {
 }
 
 // ---- Anuncios masivos (solo ADMIN): un mensaje a asistentes y/o ponentes ----
-// de un evento, o una prueba a las direcciones que el admin escriba. Cada
-// persona recibe su propio correo (nunca se juntan varios destinatarios en
-// un mismo "para"). La lista de destinatarios la arma el panel en el
-// navegador (a partir de los inscritos/ponentes del evento) y el admin
-// puede quitar o agregar correos a mano antes de enviar; el servidor
-// recibe esa lista ya definitiva.
+// de un evento. Hay UNA sola lista de destinatarios (la que se ve y se edita
+// en el formulario, armada a partir de los inscritos/ponentes del evento y
+// ajustable a mano); "prueba" es solo una marca sobre esa misma lista —le
+// agrega "[PRUEBA]" al asunto y no le avisa al equipo, pero le sigue
+// llegando a quien esté en la lista. No hay una lista aparte "de prueba":
+// si quieres probar contigo mismo, vacía la lista y agrégate a ti.
 export async function enviarAnuncio(formData: FormData) {
   const session = await requireAdminRole();
 
@@ -324,35 +324,24 @@ export async function enviarAnuncio(formData: FormData) {
   const evento = await prisma.event.findUnique({ where: { id: eventId } });
   if (!evento) redirect("/admin/dashboard/anuncios?msg=error");
 
-  const correoAdmin = session.user?.email || "";
-  let destinatarios: DestinatarioAnuncio[];
-
-  if (soloPrueba) {
-    // Direcciones que el admin escribió a mano en el campo de prueba (admite
-    // "correo@dominio.com" o "Nombre <correo@dominio.com>"). Si no puso
-    // ninguna válida, cae al correo con el que inició sesión.
-    const escritas = parseDestinatariosTexto(String(formData.get("correosPrueba") || ""));
-    destinatarios = dedupePorCorreo(
-      escritas.length ? escritas : correoAdmin ? [{ correo: correoAdmin, nombre: session.user?.name || "Admin" }] : []
-    );
-  } else {
-    let lista: unknown = [];
-    try {
-      lista = JSON.parse(String(formData.get("destinatariosJson") || "[]"));
-    } catch {
-      lista = [];
-    }
-    destinatarios = dedupePorCorreo(
-      (Array.isArray(lista) ? lista : [])
-        .filter(
-          (d): d is { correo: string; nombre?: string } =>
-            !!d && typeof d.correo === "string" && ES_CORREO_ANUNCIO(d.correo.trim())
-        )
-        .map((d) => ({ correo: d.correo.trim(), nombre: (d.nombre || "").trim() || d.correo.trim() }))
-    );
+  let lista: unknown = [];
+  try {
+    lista = JSON.parse(String(formData.get("destinatariosJson") || "[]"));
+  } catch {
+    lista = [];
   }
+  const destinatarios: DestinatarioAnuncio[] = dedupePorCorreo(
+    (Array.isArray(lista) ? lista : [])
+      .filter(
+        (d): d is { correo: string; nombre?: string } =>
+          !!d && typeof d.correo === "string" && ES_CORREO_ANUNCIO(d.correo.trim())
+      )
+      .map((d) => ({ correo: d.correo.trim(), nombre: (d.nombre || "").trim() || d.correo.trim() }))
+  );
 
   if (destinatarios.length === 0) redirect("/admin/dashboard/anuncios?msg=vacio");
+
+  const correoAdmin = session.user?.email || "";
 
   const asuntoFinal = soloPrueba ? `[PRUEBA] ${asunto}` : asunto;
   const { enviados, fallidos } = await enviarAnuncioMasivo({

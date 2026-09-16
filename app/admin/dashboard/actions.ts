@@ -303,17 +303,15 @@ export async function eliminarPonente(id: string) {
 }
 
 // ---- Anuncios masivos (solo ADMIN): un mensaje a asistentes y/o ponentes ----
-// de un evento. Hay UNA sola lista de destinatarios (la que se ve y se edita
-// en el formulario, armada a partir de los inscritos/ponentes del evento y
-// ajustable a mano); "prueba" es solo una marca sobre esa misma lista —le
-// agrega "[PRUEBA]" al asunto y no le avisa al equipo, pero le sigue
-// llegando a quien esté en la lista. No hay una lista aparte "de prueba":
-// si quieres probar contigo mismo, vacía la lista y agrégate a ti.
+// de un evento. El asunto que se escribe es EXACTAMENTE el que se envía —
+// sin marcas ni modificaciones automáticas, sin importar cuánta gente haya
+// en la lista. La lista de destinatarios es la que se ve y se edita en el
+// formulario (armada a partir de los inscritos/ponentes del evento y
+// ajustable a mano); el servidor la usa tal cual, ya definitiva.
 export async function enviarAnuncio(formData: FormData) {
   const session = await requireAdminRole();
 
   const eventId = String(formData.get("eventId") || "");
-  const soloPrueba = formData.get("prueba") === "on";
   const asunto = String(formData.get("asunto") || "").trim();
   const mensaje = String(formData.get("mensaje") || "").trim();
 
@@ -343,16 +341,13 @@ export async function enviarAnuncio(formData: FormData) {
 
   const correoAdmin = session.user?.email || "";
 
-  const asuntoFinal = soloPrueba ? `[PRUEBA] ${asunto}` : asunto;
   const { enviados, fallidos } = await enviarAnuncioMasivo({
     destinatarios,
-    asunto: asuntoFinal,
+    asunto,
     mensaje,
     eventoTitulo: evento.title,
     remitenteEmail: correoAdmin || "el panel",
-    omitirResumenEquipo: soloPrueba,
   });
 
-  const msg = soloPrueba ? "prueba" : "enviado";
-  redirect(`/admin/dashboard/anuncios?msg=${msg}&n=${enviados}${fallidos ? `&f=${fallidos}` : ""}`);
+  redirect(`/admin/dashboard/anuncios?msg=enviado&n=${enviados}${fallidos ? `&f=${fallidos}` : ""}`);
 }

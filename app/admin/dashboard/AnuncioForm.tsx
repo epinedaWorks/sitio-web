@@ -18,11 +18,11 @@ type EventoDatos = {
 // Vive DENTRO del <form> para que useFormStatus refleje el envío real
 // (incluida la redirección al terminar) en vez de un estado propio que
 // nunca se resetea si el componente no se vuelve a montar.
-function BotonEnviar({ prueba, total }: { prueba: boolean; total: number }) {
+function BotonEnviar({ total }: { total: number }) {
   const { pending } = useFormStatus();
   return (
     <button type="submit" disabled={pending || total === 0} style={{ fontWeight: 700, padding: "8px 16px" }}>
-      {pending ? "Enviando…" : `Enviar${prueba ? " PRUEBA" : ""} a ${total} persona${total === 1 ? "" : "s"}`}
+      {pending ? "Enviando…" : `Enviar a ${total} persona${total === 1 ? "" : "s"}`}
     </button>
   );
 }
@@ -42,7 +42,6 @@ export default function AnuncioForm({
   const [asistentesOn, setAsistentesOn] = useState(true);
   const [ponentesOn, setPonentesOn] = useState(true);
   const [estadoPonentes, setEstadoPonentes] = useState<EstadoPonente>("TODOS");
-  const [prueba, setPrueba] = useState(false);
   const [lista, setLista] = useState<Persona[]>([]);
   const [nuevoCorreo, setNuevoCorreo] = useState("");
   const [nuevoNombre, setNuevoNombre] = useState("");
@@ -75,12 +74,12 @@ export default function AnuncioForm({
     setNuevoNombre("");
   };
 
-  // Atajo: vacía la lista, deja solo al admin, y marca la casilla de prueba.
-  // Así se prueba con UNA sola lista (la de abajo) en vez de un campo aparte.
-  const probarSoloConmigo = () => {
+  // Atajo: vacía la lista y deja solo al admin — para revisar cómo se ve el
+  // correo antes de mandarlo a todos. No es un "modo prueba": es el envío
+  // real, nada más que a una sola persona (uno mismo).
+  const dejarSoloMiCorreo = () => {
     if (!correoAdmin) return;
     setLista([{ correo: correoAdmin, nombre: nombreAdmin || correoAdmin.split("@")[0] }]);
-    setPrueba(true);
   };
 
   if (eventos.length === 0) {
@@ -92,21 +91,18 @@ export default function AnuncioForm({
       action={action}
       onSubmit={(e) => {
         const ok = window.confirm(
-          prueba
-            ? `Vas a enviar una PRUEBA (con [PRUEBA] en el asunto) a ${lista.length} persona${
-                lista.length === 1 ? "" : "s"
-              }. ¿Continuar?`
-            : `Vas a enviar este correo a ${lista.length} persona${
-                lista.length === 1 ? "" : "s"
-              }. No se puede deshacer. ¿Continuar?`
+          `Vas a enviar este correo, tal cual lo escribiste, a ${lista.length} persona${
+            lista.length === 1 ? "" : "s"
+          }. No se puede deshacer. ¿Continuar?`
         );
         if (!ok) e.preventDefault();
       }}
       style={{ display: "grid", gap: 14, marginTop: 20 }}
     >
       {/* La lista de abajo (ya editada a mano si hizo falta) es la ÚNICA
-          fuente de a quién le llega — tanto en un envío real como en una
-          prueba. Viaja como JSON; el servidor la usa tal cual. */}
+          fuente de a quién le llega. Viaja como JSON; el servidor la usa
+          tal cual, y el asunto/mensaje se envían exactamente como se
+          escribieron, sin ninguna marca ni modificación automática. */}
       <input type="hidden" name="destinatariosJson" value={JSON.stringify(lista)} />
 
       <label style={{ fontSize: 13, fontWeight: 600 }}>
@@ -167,8 +163,8 @@ export default function AnuncioForm({
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
           <strong style={{ fontSize: 13 }}>Destinatarios ({lista.length})</strong>
           {correoAdmin && (
-            <button type="button" onClick={probarSoloConmigo} style={{ fontSize: 12, padding: "4px 10px" }}>
-              Vaciar y probar solo conmigo
+            <button type="button" onClick={dejarSoloMiCorreo} style={{ fontSize: 12, padding: "4px 10px" }}>
+              Vaciar y dejar solo mi correo
             </button>
           )}
         </div>
@@ -221,7 +217,7 @@ export default function AnuncioForm({
           </button>
         </div>
         <p style={{ fontSize: 12, opacity: 0.6, marginTop: 8, marginBottom: 0 }}>
-          Esta es la lista real: a quien esté aquí le llega, sea prueba o envío real.
+          A quien esté aquí le llega el correo. Nada más.
         </p>
       </div>
 
@@ -234,6 +230,7 @@ export default function AnuncioForm({
           placeholder="Ej. Últimos detalles del Python eXposition Day 2026"
           style={{ display: "block", width: "100%", marginTop: 4, padding: 6 }}
         />
+        <span style={{ fontSize: 12, opacity: 0.6 }}>Se envía exactamente como lo escribas, sin nada agregado.</span>
       </label>
 
       <label style={{ fontSize: 13, fontWeight: 600 }}>
@@ -252,14 +249,8 @@ export default function AnuncioForm({
         </span>
       </label>
 
-      <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
-        <input type="checkbox" name="prueba" checked={prueba} onChange={(e) => setPrueba(e.target.checked)} />
-        Marcar como prueba (agrega &quot;[PRUEBA]&quot; al asunto y no le avisa al equipo — pero{" "}
-        <b>igual le llega a quien esté en la lista de arriba</b>)
-      </label>
-
       <div>
-        <BotonEnviar prueba={prueba} total={lista.length} />
+        <BotonEnviar total={lista.length} />
       </div>
     </form>
   );

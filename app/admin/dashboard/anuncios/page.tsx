@@ -9,10 +9,6 @@ const MENSAJES: Record<string, { ok: boolean; texto: (n?: string, f?: string) =>
     texto: (n, f) =>
       `Anuncio enviado a ${n} persona${n === "1" ? "" : "s"}.${f ? ` ${f} fallaron — revisa los logs.` : ""}`,
   },
-  prueba: {
-    ok: true,
-    texto: (n) => `Prueba enviada (con [PRUEBA] en el asunto) a ${n} persona${n === "1" ? "" : "s"}.`,
-  },
   faltan: {
     ok: false,
     texto: () => "Faltan campos: elige un evento, al menos un destinatario, asunto y mensaje.",
@@ -63,9 +59,9 @@ export default async function AnunciosPage({
       <h1>Anuncios</h1>
       <p style={{ opacity: 0.75, fontSize: 14 }}>
         Manda un correo a los asistentes inscritos y/o a los conferencistas, talleristas y expositores de
-        un evento. Puedes revisar la lista de correos, quitar o agregar alguno antes de enviar — esa lista
-        es la que de verdad recibe el correo, tanto si lo marcas como prueba como si no. Cada quien recibe
-        su propio correo — nadie ve la lista de los demás.
+        un evento. Puedes revisar la lista de correos y quitar o agregar alguno antes de enviar. El asunto
+        y el mensaje se mandan exactamente como los escribas, sin nada agregado. Cada quien recibe su propio
+        correo — nadie ve la lista de los demás.
       </p>
 
       {aviso && (

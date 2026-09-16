@@ -328,9 +328,6 @@ export async function enviarAnuncioMasivo(opts: {
   mensaje: string; // texto plano; puede usar {{nombre}}; párrafos separados por línea en blanco
   eventoTitulo: string;
   remitenteEmail: string;
-  // true en un envío de prueba: no manda el resumen al equipo (si no, cada
-  // prueba le llegaría al equipo como si fuera un anuncio real).
-  omitirResumenEquipo?: boolean;
 }): Promise<{ enviados: number; fallidos: number }> {
   if (!API_KEY) {
     sinConfig();
@@ -376,9 +373,8 @@ export async function enviarAnuncioMasivo(opts: {
     }
   }
 
-  // Una sola copia de resumen al equipo (no una por cada destinatario; y nunca
-  // en una prueba, para no generar ruido cada vez que alguien la usa).
-  if (TEAM_LIST.length && !opts.omitirResumenEquipo) {
+  // Una sola copia de resumen al equipo (no una por cada destinatario).
+  if (TEAM_LIST.length) {
     await enviar({
       to: TEAM_LIST,
       subject: `Anuncio enviado: ${opts.asunto}`,

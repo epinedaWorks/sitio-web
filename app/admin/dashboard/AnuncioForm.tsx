@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useFormStatus } from "react-dom";
+import { ES_CORREO_ANUNCIO as ES_CORREO, parseDestinatariosTexto, dedupePorCorreo as dedupe } from "@/lib/anuncios";
 
 type Persona = { correo: string; nombre: string };
 type EstadoPonente = "TODOS" | "ACEPTADA" | "PENDIENTE" | "RECHAZADA";
@@ -13,18 +14,6 @@ type EventoDatos = {
   asistentes: Persona[];
   ponentes: Record<EstadoPonente, Persona[]>;
 };
-
-const ES_CORREO = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s);
-
-function dedupe(lista: Persona[]): Persona[] {
-  const vistos = new Set<string>();
-  return lista.filter((p) => {
-    const k = p.correo.toLowerCase();
-    if (!p.correo || vistos.has(k)) return false;
-    vistos.add(k);
-    return true;
-  });
-}
 
 // Vive DENTRO del <form> para que useFormStatus refleje el envío real
 // (incluida la redirección al terminar) en vez de un estado propio que
@@ -48,12 +37,10 @@ function BotonEnviar({ prueba, total, totalPrueba }: { prueba: boolean; total: n
 
 // Cuenta cuántas direcciones válidas hay en el campo de prueba (separadas
 // por coma, punto y coma, espacio o salto de línea) — solo para el texto
-// del botón; la validación de verdad ocurre en el servidor.
+// del botón; la validación y el parseo de verdad ocurren igual en el servidor
+// (misma función, importada de lib/anuncios).
 function contarCorreos(texto: string): number {
-  return texto
-    .split(/[,;\s]+/)
-    .map((s) => s.trim())
-    .filter((s) => ES_CORREO(s)).length;
+  return parseDestinatariosTexto(texto).length;
 }
 
 export default function AnuncioForm({
@@ -270,12 +257,12 @@ export default function AnuncioForm({
               name="correosPrueba"
               value={correosPrueba}
               onChange={(e) => setCorreosPrueba(e.target.value)}
-              placeholder="tucorreo@ejemplo.com, otro@gmail.com"
+              placeholder="tucorreo@ejemplo.com, María López <otro@gmail.com>"
               style={{ display: "block", width: "100%", marginTop: 4, padding: 6 }}
             />
             <span style={{ fontSize: 12, opacity: 0.65 }}>
-              Separa varias direcciones con coma. Útil para probar en Gmail, Outlook, etc. antes de
-              mandarlo a todos.
+              Separa varias con coma. Si solo pones el correo, {"{{nombre}}"} sale como lo que va antes de
+              la @ — para ver el nombre real, escribe <code>Nombre &lt;correo@ejemplo.com&gt;</code>.
             </span>
           </label>
         )}

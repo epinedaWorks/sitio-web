@@ -7,6 +7,7 @@ import { getStore } from "@netlify/blobs";
 import { prisma } from "@/lib/prisma";
 import { fechaDesdeInput } from "@/lib/fecha";
 import { enviarAnuncioMasivo, type DestinatarioAnuncio } from "@/lib/email";
+import { ES_CORREO_ANUNCIO, parseDestinatariosTexto, dedupePorCorreo } from "@/lib/anuncios";
 import { requireAdminSession, requireAdminRole } from "@/lib/require-admin";
 import {
   invalidarSettingsCache,
@@ -301,18 +302,6 @@ export async function eliminarPonente(id: string) {
   revalidatePath("/admin/dashboard/ponentes");
 }
 
-const ES_CORREO_ANUNCIO = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) && s.length <= 254;
-
-function dedupePorCorreo(lista: DestinatarioAnuncio[]): DestinatarioAnuncio[] {
-  const vistos = new Set<string>();
-  return lista.filter((d) => {
-    const k = d.correo.toLowerCase();
-    if (vistos.has(k)) return false;
-    vistos.add(k);
-    return true;
-  });
-}
-
 // ---- Anuncios masivos (solo ADMIN): un mensaje a asistentes y/o ponentes ----
 // de un evento, o una prueba a las direcciones que el admin escriba. Cada
 // persona recibe su propio correo (nunca se juntan varios destinatarios en
@@ -339,15 +328,10 @@ export async function enviarAnuncio(formData: FormData) {
   let destinatarios: DestinatarioAnuncio[];
 
   if (soloPrueba) {
-    // Direcciones que el admin escribió a mano en el campo de prueba
-    // (separadas por coma, punto y coma, espacio o salto de línea). Si no
-    // puso ninguna válida, cae al correo con el que inició sesión.
-    const crudo = String(formData.get("correosPrueba") || "");
-    const escritas = crudo
-      .split(/[,;\s]+/)
-      .map((s) => s.trim())
-      .filter((s) => ES_CORREO_ANUNCIO(s))
-      .map((correo) => ({ correo, nombre: correo.split("@")[0] }));
+    // Direcciones que el admin escribió a mano en el campo de prueba (admite
+    // "correo@dominio.com" o "Nombre <correo@dominio.com>"). Si no puso
+    // ninguna válida, cae al correo con el que inició sesión.
+    const escritas = parseDestinatariosTexto(String(formData.get("correosPrueba") || ""));
     destinatarios = dedupePorCorreo(
       escritas.length ? escritas : correoAdmin ? [{ correo: correoAdmin, nombre: session.user?.name || "Admin" }] : []
     );

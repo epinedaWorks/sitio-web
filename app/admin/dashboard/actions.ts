@@ -303,12 +303,23 @@ export async function eliminarPonente(id: string) {
 
 const ES_CORREO_ANUNCIO = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(s) && s.length <= 254;
 
+function dedupePorCorreo(lista: DestinatarioAnuncio[]): DestinatarioAnuncio[] {
+  const vistos = new Set<string>();
+  return lista.filter((d) => {
+    const k = d.correo.toLowerCase();
+    if (vistos.has(k)) return false;
+    vistos.add(k);
+    return true;
+  });
+}
+
 // ---- Anuncios masivos (solo ADMIN): un mensaje a asistentes y/o ponentes ----
-// de un evento, o una prueba solo a quien lo envía. Cada persona recibe su
-// propio correo (nunca se juntan varios destinatarios en un mismo "para").
-// La lista de destinatarios la arma el panel en el navegador (a partir de los
-// inscritos/ponentes del evento) y el admin puede quitar o agregar correos a
-// mano antes de enviar; el servidor recibe esa lista ya definitiva.
+// de un evento, o una prueba a las direcciones que el admin escriba. Cada
+// persona recibe su propio correo (nunca se juntan varios destinatarios en
+// un mismo "para"). La lista de destinatarios la arma el panel en el
+// navegador (a partir de los inscritos/ponentes del evento) y el admin
+// puede quitar o agregar correos a mano antes de enviar; el servidor
+// recibe esa lista ya definitiva.
 export async function enviarAnuncio(formData: FormData) {
   const session = await requireAdminRole();
 
@@ -328,8 +339,18 @@ export async function enviarAnuncio(formData: FormData) {
   let destinatarios: DestinatarioAnuncio[];
 
   if (soloPrueba) {
-    if (!correoAdmin) redirect("/admin/dashboard/anuncios?msg=error");
-    destinatarios = [{ correo: correoAdmin, nombre: session.user?.name || "Admin" }];
+    // Direcciones que el admin escribió a mano en el campo de prueba
+    // (separadas por coma, punto y coma, espacio o salto de línea). Si no
+    // puso ninguna válida, cae al correo con el que inició sesión.
+    const crudo = String(formData.get("correosPrueba") || "");
+    const escritas = crudo
+      .split(/[,;\s]+/)
+      .map((s) => s.trim())
+      .filter((s) => ES_CORREO_ANUNCIO(s))
+      .map((correo) => ({ correo, nombre: correo.split("@")[0] }));
+    destinatarios = dedupePorCorreo(
+      escritas.length ? escritas : correoAdmin ? [{ correo: correoAdmin, nombre: session.user?.name || "Admin" }] : []
+    );
   } else {
     let lista: unknown = [];
     try {
@@ -337,19 +358,14 @@ export async function enviarAnuncio(formData: FormData) {
     } catch {
       lista = [];
     }
-    const vistos = new Set<string>();
-    destinatarios = (Array.isArray(lista) ? lista : [])
-      .filter(
-        (d): d is { correo: string; nombre?: string } =>
-          !!d && typeof d.correo === "string" && ES_CORREO_ANUNCIO(d.correo.trim())
-      )
-      .map((d) => ({ correo: d.correo.trim(), nombre: (d.nombre || "").trim() || d.correo.trim() }))
-      .filter((d) => {
-        const k = d.correo.toLowerCase();
-        if (vistos.has(k)) return false;
-        vistos.add(k);
-        return true;
-      });
+    destinatarios = dedupePorCorreo(
+      (Array.isArray(lista) ? lista : [])
+        .filter(
+          (d): d is { correo: string; nombre?: string } =>
+            !!d && typeof d.correo === "string" && ES_CORREO_ANUNCIO(d.correo.trim())
+        )
+        .map((d) => ({ correo: d.correo.trim(), nombre: (d.nombre || "").trim() || d.correo.trim() }))
+    );
   }
 
   if (destinatarios.length === 0) redirect("/admin/dashboard/anuncios?msg=vacio");

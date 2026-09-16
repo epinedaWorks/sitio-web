@@ -9,7 +9,10 @@ const MENSAJES: Record<string, { ok: boolean; texto: (n?: string, f?: string) =>
     texto: (n, f) =>
       `Anuncio enviado a ${n} persona${n === "1" ? "" : "s"}.${f ? ` ${f} fallaron — revisa los logs.` : ""}`,
   },
-  prueba: { ok: true, texto: () => "Prueba enviada a tu correo." },
+  prueba: {
+    ok: true,
+    texto: (n) => `Prueba enviada a ${n} ${n === "1" ? "dirección" : "direcciones"}.`,
+  },
   faltan: {
     ok: false,
     texto: () => "Faltan campos: elige un evento, asunto y mensaje (y al menos un destinatario si no es prueba).",
@@ -23,7 +26,7 @@ export default async function AnunciosPage({
 }: {
   searchParams?: { msg?: string; n?: string; f?: string };
 }) {
-  await requireAdminRole();
+  const session = await requireAdminRole();
 
   const eventos = await prisma.event.findMany({
     orderBy: { date: "desc" },
@@ -78,7 +81,7 @@ export default async function AnunciosPage({
         </p>
       )}
 
-      <AnuncioForm eventos={datos} action={enviarAnuncio} />
+      <AnuncioForm eventos={datos} action={enviarAnuncio} correoAdmin={session.user?.email || ""} />
     </main>
   );
 }

@@ -29,31 +29,48 @@ function dedupe(lista: Persona[]): Persona[] {
 // Vive DENTRO del <form> para que useFormStatus refleje el envío real
 // (incluida la redirección al terminar) en vez de un estado propio que
 // nunca se resetea si el componente no se vuelve a montar.
-function BotonEnviar({ prueba, total }: { prueba: boolean; total: number }) {
+function BotonEnviar({ prueba, total, totalPrueba }: { prueba: boolean; total: number; totalPrueba: number }) {
   const { pending } = useFormStatus();
   return (
-    <button type="submit" disabled={pending || (!prueba && total === 0)} style={{ fontWeight: 700, padding: "8px 16px" }}>
+    <button
+      type="submit"
+      disabled={pending || (prueba ? totalPrueba === 0 : total === 0)}
+      style={{ fontWeight: 700, padding: "8px 16px" }}
+    >
       {pending
         ? "Enviando…"
         : prueba
-          ? "Enviar prueba a mi correo"
+          ? `Enviar prueba a ${totalPrueba} ${totalPrueba === 1 ? "dirección" : "direcciones"}`
           : `Enviar a ${total} persona${total === 1 ? "" : "s"}`}
     </button>
   );
 }
 
+// Cuenta cuántas direcciones válidas hay en el campo de prueba (separadas
+// por coma, punto y coma, espacio o salto de línea) — solo para el texto
+// del botón; la validación de verdad ocurre en el servidor.
+function contarCorreos(texto: string): number {
+  return texto
+    .split(/[,;\s]+/)
+    .map((s) => s.trim())
+    .filter((s) => ES_CORREO(s)).length;
+}
+
 export default function AnuncioForm({
   eventos,
   action,
+  correoAdmin = "",
 }: {
   eventos: EventoDatos[];
   action: (formData: FormData) => void | Promise<void>;
+  correoAdmin?: string;
 }) {
   const [eventId, setEventId] = useState(eventos[0]?.id || "");
   const [asistentesOn, setAsistentesOn] = useState(true);
   const [ponentesOn, setPonentesOn] = useState(true);
   const [estadoPonentes, setEstadoPonentes] = useState<EstadoPonente>("TODOS");
   const [prueba, setPrueba] = useState(false);
+  const [correosPrueba, setCorreosPrueba] = useState(correoAdmin);
   const [lista, setLista] = useState<Persona[]>([]);
   const [nuevoCorreo, setNuevoCorreo] = useState("");
   const [nuevoNombre, setNuevoNombre] = useState("");
@@ -241,13 +258,31 @@ export default function AnuncioForm({
         </span>
       </label>
 
-      <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
-        <input type="checkbox" name="prueba" checked={prueba} onChange={(e) => setPrueba(e.target.checked)} />
-        Enviar solo una prueba a mi correo (no le llega a nadie más)
-      </label>
+      <div style={{ border: "1px solid #e2e2e2", borderRadius: 10, padding: 14 }}>
+        <label style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 8 }}>
+          <input type="checkbox" name="prueba" checked={prueba} onChange={(e) => setPrueba(e.target.checked)} />
+          Enviar solo una prueba (no le llega a nadie de la lista de arriba)
+        </label>
+        {prueba && (
+          <label style={{ fontSize: 13, marginTop: 10, display: "block" }}>
+            ¿A qué correos?
+            <input
+              name="correosPrueba"
+              value={correosPrueba}
+              onChange={(e) => setCorreosPrueba(e.target.value)}
+              placeholder="tucorreo@ejemplo.com, otro@gmail.com"
+              style={{ display: "block", width: "100%", marginTop: 4, padding: 6 }}
+            />
+            <span style={{ fontSize: 12, opacity: 0.65 }}>
+              Separa varias direcciones con coma. Útil para probar en Gmail, Outlook, etc. antes de
+              mandarlo a todos.
+            </span>
+          </label>
+        )}
+      </div>
 
       <div>
-        <BotonEnviar prueba={prueba} total={lista.length} />
+        <BotonEnviar prueba={prueba} total={lista.length} totalPrueba={contarCorreos(correosPrueba)} />
       </div>
     </form>
   );

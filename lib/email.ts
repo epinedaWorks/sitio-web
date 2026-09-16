@@ -299,3 +299,103 @@ export async function sendContactEmail(d: DatosContacto) {
     bcc: TEAM_LIST, // el equipo recibe copia oculta de lo que se le manda a la persona
   });
 }
+
+// ---------- Anuncios masivos (panel: enviar un mensaje a mucha gente) ----------
+export type DestinatarioAnuncio = { correo: string; nombre: string };
+
+// Sustituye {{nombre}} por el primer nombre de la persona (o lo deja igual si
+// no aparece en el mensaje).
+function personaliza(mensaje: string, nombre: string): string {
+  const primerNombre = (nombre || "").trim().split(/\s+/)[0] || nombre;
+  return mensaje.replaceAll("{{nombre}}", primerNombre);
+}
+
+function parrafos(texto: string): string {
+  return texto
+    .split(/\n{2,}/)
+    .map((p) => `<p style="font-size:14px;line-height:1.6;white-space:pre-wrap;margin:0 0 12px">${esc(p)}</p>`)
+    .join("");
+}
+
+// Envía el mismo mensaje (personalizado con {{nombre}}) a una lista de
+// personas. Cada quien recibe SU PROPIO correo — nunca se juntan varios
+// destinatarios en un mismo "para", así nadie ve la lista de los demás.
+// Usa el envío por lotes de Resend (hasta 100 correos por petición) para no
+// hacer una llamada a la API por persona.
+export async function enviarAnuncioMasivo(opts: {
+  destinatarios: DestinatarioAnuncio[];
+  asunto: string;
+  mensaje: string; // texto plano; puede usar {{nombre}}; párrafos separados por línea en blanco
+  eventoTitulo: string;
+  remitenteEmail: string;
+  // true en un envío de prueba: no manda el resumen al equipo (si no, cada
+  // prueba le llegaría al equipo como si fuera un anuncio real).
+  omitirResumenEquipo?: boolean;
+}): Promise<{ enviados: number; fallidos: number }> {
+  if (!API_KEY) {
+    sinConfig();
+    return { enviados: 0, fallidos: opts.destinatarios.length };
+  }
+  if (opts.destinatarios.length === 0) return { enviados: 0, fallidos: 0 };
+
+  const TEAM_LIST = await getCorreosEquipo();
+  const html = (nombre: string) =>
+    layout(opts.asunto, parrafos(personaliza(opts.mensaje, nombre)));
+
+  let enviados = 0;
+  let fallidos = 0;
+  const LOTE = 100; // límite del endpoint de envío por lotes de Resend
+  for (let i = 0; i < opts.destinatarios.length; i += LOTE) {
+    const lote = opts.destinatarios.slice(i, i + LOTE);
+    try {
+      const res = await fetch("https://api.resend.com/emails/batch", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${API_KEY}`,
+          "Content-Type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify(
+          lote.map((d) => ({
+            from: FROM,
+            to: [d.correo],
+            subject: opts.asunto,
+            html: html(d.nombre),
+            ...(TEAM_LIST[0] ? { reply_to: TEAM_LIST[0] } : {}),
+          }))
+        ),
+      });
+      if (res.ok) {
+        enviados += lote.length;
+      } else {
+        fallidos += lote.length;
+        console.error("[anuncio] Resend (batch) respondió", res.status, await res.text().catch(() => ""));
+      }
+    } catch (err) {
+      fallidos += lote.length;
+      console.error("[anuncio] no se pudo enviar un lote:", err);
+    }
+  }
+
+  // Una sola copia de resumen al equipo (no una por cada destinatario; y nunca
+  // en una prueba, para no generar ruido cada vez que alguien la usa).
+  if (TEAM_LIST.length && !opts.omitirResumenEquipo) {
+    await enviar({
+      to: TEAM_LIST,
+      subject: `Anuncio enviado: ${opts.asunto}`,
+      html: layout(
+        "Se envió un anuncio masivo",
+        `${filas([
+          ["Evento", opts.eventoTitulo],
+          ["Enviado por", opts.remitenteEmail],
+          ["Destinatarios", String(opts.destinatarios.length)],
+          ["Entregados", String(enviados)],
+          ["Fallidos", fallidos > 0 ? String(fallidos) : null],
+        ])}
+        <p style="font-size:13px;color:#666;margin-top:12px">Mensaje enviado:</p>
+        ${parrafos(opts.mensaje)}`
+      ),
+    });
+  }
+
+  return { enviados, fallidos };
+}

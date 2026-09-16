@@ -31,6 +31,14 @@ export default async function DashboardHome() {
         <Card href="/admin/dashboard/inscritos" icon="🎟️" title="Inscritos" value={inscritos} desc="Ver y exportar participantes" />
         <Card href="/admin/dashboard/checkin" icon="📷" title="Asistencia (ingresaron)" value={ingresaron} desc="Escanear QR el día del evento" />
         <Card href="/admin/dashboard/contacto" icon="✉️" title="Contacto sin atender" value={contacto} desc="Patrocinio, prensa, más información" />
+        {esAdmin && (
+          <Card
+            href="/admin/dashboard/anuncios"
+            icon="📣"
+            title="Anuncios"
+            desc="Enviar un correo a asistentes y/o ponentes de un evento"
+          />
+        )}
       </div>
 
       <h2 style={{ fontSize: "1.1rem", margin: "32px 0 12px", opacity: 0.7 }}>Configuración</h2>

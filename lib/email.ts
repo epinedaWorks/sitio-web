@@ -6,10 +6,6 @@ const API_KEY = process.env.RESEND_API_KEY;
 const FROM = process.env.EMAIL_FROM || "Comunidad Python Guatemala <no-reply@pythonguatemala.dev>";
 const ADMIN_URL = process.env.ADMIN_URL || "http://localhost:3000/admin/dashboard";
 
-// Netlify inyecta el hash del commit desplegado; sirve para comprobar, mirando
-// un correo ya recibido, con qué versión del código se generó de verdad.
-const BUILD_REF = (process.env.COMMIT_REF || "sin-commit-ref").slice(0, 7);
-
 // Los correos del equipo y la copia oculta se editan desde el panel
 // (/admin/dashboard/ajustes); la variable de entorno es el respaldo.
 export const getCorreosEquipo = () => getListaCorreos(SETTING_TEAM_EMAIL, process.env.TEAM_EMAIL);
@@ -85,6 +81,24 @@ function layout(titulo: string, cuerpo: string) {
       <h2 style="margin:0 0 12px;font-size:18px">${esc(titulo)}</h2>
       ${cuerpo}
     </div>
+  </div>
+</body></html>`;
+}
+
+// Versión sin "cara de plantilla" (sin banner de color, sin logo grande) para
+// los anuncios que le llegan a una persona real: se ve más como un correo
+// personal normal. Gmail (y otros) usan pistas visuales como esas para
+// decidir si algo va a Promociones — esto ayuda, aunque no lo garantiza (la
+// reputación del dominio y cuánta gente abre/mueve estos correos también
+// pesa, y eso mejora solo con el tiempo).
+function layoutSencillo(cuerpo: string): string {
+  return `<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8" />
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" /></head>
+<body style="margin:0;background:#ffffff;padding:0">
+  <div style="font-family:system-ui,-apple-system,Segoe UI,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#1a1a1a;font-size:15px;line-height:1.65">
+    ${cuerpo}
+    <p style="margin-top:26px;color:#888;font-size:13px">— Comunidad Python Guatemala</p>
   </div>
 </body></html>`;
 }
@@ -353,8 +367,7 @@ export async function enviarAnuncioMasivo(opts: {
   const TEAM_LIST = await getCorreosEquipo();
   // Marca invisible al pie: para poder comprobar, en un correo ya recibido,
   // con qué versión del código y a qué hora se generó de verdad.
-  const marca = `<p style="font-size:11px;color:#aaa;margin-top:22px;border-top:1px solid #eee;padding-top:8px">Generado ${new Date().toISOString()} · build ${BUILD_REF}</p>`;
-  const html = (nombre: string) => layout(opts.asunto, parrafos(personaliza(opts.mensaje, nombre)) + marca);
+  const html = (nombre: string) => layoutSencillo(parrafos(personaliza(opts.mensaje, nombre)));
 
   const enviarUno = async (d: DestinatarioAnuncio): Promise<boolean> => {
     try {
@@ -417,8 +430,7 @@ export async function enviarAnuncioMasivo(opts: {
             : ""
         }
         <p style="font-size:13px;color:#666;margin-top:12px">Mensaje enviado:</p>
-        ${parrafos(opts.mensaje)}
-        ${marca}`
+        ${parrafos(opts.mensaje)}`
       ),
     });
   }

@@ -54,6 +54,12 @@ export default async function AnunciosPage({
 
   const aviso = searchParams?.msg ? MENSAJES[searchParams.msg] : null;
 
+  // Tras un envío exitoso, remonta el formulario (vacío, con la lista
+  // recalculada) para que quede claro que ya se mandó y no quede el mismo
+  // texto ahí tentando a mandarlo dos veces. En cualquier otro caso (o si
+  // faltó algo) el formulario se queda como estaba, con lo que ya se escribió.
+  const formKey = searchParams?.msg === "enviado" ? `enviado-${Date.now()}` : "form";
+
   return (
     <main style={{ maxWidth: 720, margin: "40px auto", fontFamily: "sans-serif", padding: "0 16px" }}>
       <h1>Anuncios</h1>
@@ -78,7 +84,7 @@ export default async function AnunciosPage({
         </p>
       )}
 
-      <AnuncioForm eventos={datos} action={enviarAnuncio} />
+      <AnuncioForm key={formKey} eventos={datos} action={enviarAnuncio} />
     </main>
   );
 }

@@ -103,6 +103,8 @@ export default function AnuncioForm({
   const [lista, setLista] = useState<Persona[]>([]);
   const [nuevoCorreo, setNuevoCorreo] = useState("");
   const [nuevoNombre, setNuevoNombre] = useState("");
+  const [asunto, setAsunto] = useState("");
+  const [mensaje, setMensaje] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
 
   const evento = eventos.find((e) => e.id === eventId);
@@ -134,6 +136,10 @@ export default function AnuncioForm({
   };
 
   const vaciarLista = () => setLista([]);
+  const limpiarMensaje = () => {
+    setAsunto("");
+    setMensaje("");
+  };
 
   if (eventos.length === 0) {
     return <p style={{ opacity: 0.7 }}>Aún no hay eventos. Crea uno en Eventos primero.</p>;
@@ -267,6 +273,8 @@ export default function AnuncioForm({
         Asunto
         <input
           name="asunto"
+          value={asunto}
+          onChange={(e) => setAsunto(e.target.value)}
           required
           maxLength={200}
           autoComplete="off"
@@ -280,6 +288,8 @@ export default function AnuncioForm({
         Mensaje
         <textarea
           name="mensaje"
+          value={mensaje}
+          onChange={(e) => setMensaje(e.target.value)}
           required
           rows={9}
           maxLength={8000}
@@ -292,8 +302,13 @@ export default function AnuncioForm({
         </span>
       </label>
 
-      <div>
+      <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
         <BotonEnviar total={lista.length} formRef={formRef} />
+        {(asunto || mensaje) && (
+          <button type="button" onClick={limpiarMensaje} style={{ fontSize: 13, padding: "6px 12px" }}>
+            Limpiar asunto y mensaje
+          </button>
+        )}
       </div>
     </form>
   );

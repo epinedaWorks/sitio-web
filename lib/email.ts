@@ -328,15 +328,68 @@ function listaLegible(lista: DestinatarioAnuncio[], tope = 150): string {
   return items.join(", ") + (resto > 0 ? ` … y ${resto} más` : "");
 }
 
+function esperar(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+type ResultadoEnvio = { ok: true } | { ok: false; motivo: string };
+
+// Envía un correo con reintento: si Resend responde 429 (pasado el límite de
+// peticiones por segundo — 10/seg por cuenta, y varias tandas concurrentes
+// pueden rozarlo) espera un poco y lo intenta de nuevo antes de darlo por
+// fallido de verdad.
+async function enviarConReintento(
+  correo: string,
+  cuerpoHtml: string,
+  opts: { asunto: string; replyTo?: string }
+): Promise<ResultadoEnvio> {
+  const INTENTOS = 3;
+  for (let intento = 1; intento <= INTENTOS; intento++) {
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${API_KEY}`,
+          "Content-Type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify({
+          from: FROM,
+          to: [correo],
+          subject: opts.asunto,
+          html: cuerpoHtml,
+          ...(opts.replyTo ? { reply_to: opts.replyTo } : {}),
+        }),
+      });
+      if (res.ok) return { ok: true };
+      const cuerpo = await res.text().catch(() => "");
+      if (res.status === 429 && intento < INTENTOS) {
+        await esperar(700 * intento);
+        continue;
+      }
+      console.error("[anuncio] Resend respondió", correo, res.status, cuerpo);
+      return { ok: false, motivo: res.status === 429 ? "límite de envíos por segundo" : `HTTP ${res.status}` };
+    } catch (err) {
+      if (intento < INTENTOS) {
+        await esperar(500 * intento);
+        continue;
+      }
+      console.error("[anuncio] no se pudo enviar a", correo, err);
+      return { ok: false, motivo: "error de red" };
+    }
+  }
+  return { ok: false, motivo: "desconocido" };
+}
+
 // Envía el mismo mensaje (personalizado con {{nombre}}) a una lista de
 // personas. Cada quien recibe SU PROPIO correo, con una petición aparte a la
 // API de Resend por persona (nunca se juntan varios destinatarios en un
 // mismo "para", así nadie ve la lista de los demás) — la misma ruta que ya
 // se usa para las confirmaciones de inscripción y postulación. Van en
-// paralelo, en tandas pequeñas, para no tardar una eternidad ni saturar el
-// límite de peticiones por segundo de Resend. Se verifica la respuesta de
-// cada envío individualmente: nada se cuenta como entregado solo porque el
-// lote completo "salió bien".
+// tandas pequeñas con una pausa entre cada una, para quedarse cómodamente
+// bajo el límite de 10 peticiones por segundo de Resend (y reintentar si
+// aun así se topa con uno). Se verifica la respuesta de cada envío
+// individualmente: nada se cuenta como entregado solo porque el lote
+// completo "salió bien".
 export async function enviarAnuncioMasivo(opts: {
   destinatarios: DestinatarioAnuncio[];
   asunto: string;
@@ -351,49 +404,26 @@ export async function enviarAnuncioMasivo(opts: {
   if (opts.destinatarios.length === 0) return { enviados: 0, fallidos: 0 };
 
   const TEAM_LIST = await getCorreosEquipo();
-  // Marca invisible al pie: para poder comprobar, en un correo ya recibido,
-  // con qué versión del código y a qué hora se generó de verdad.
   const html = (nombre: string) => layout(opts.asunto, parrafos(personaliza(opts.mensaje, nombre)));
 
-  const enviarUno = async (d: DestinatarioAnuncio): Promise<boolean> => {
-    try {
-      const res = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${API_KEY}`,
-          "Content-Type": "application/json; charset=utf-8",
-        },
-        body: JSON.stringify({
-          from: FROM,
-          to: [d.correo],
-          subject: opts.asunto,
-          html: html(d.nombre),
-          ...(TEAM_LIST[0] ? { reply_to: TEAM_LIST[0] } : {}),
-        }),
-      });
-      if (res.ok) return true;
-      console.error("[anuncio] Resend respondió", d.correo, res.status, await res.text().catch(() => ""));
-      return false;
-    } catch (err) {
-      console.error("[anuncio] no se pudo enviar a", d.correo, err);
-      return false;
-    }
-  };
-
   let enviados = 0;
-  const fallidosCorreos: string[] = [];
-  const TANDA = 8; // concurrencia moderada, para no golpear el límite de Resend
+  const fallidos: { correo: string; motivo: string }[] = [];
+  const TANDA = 5; // concurrencia conservadora frente al límite de 10/seg de Resend
   for (let i = 0; i < opts.destinatarios.length; i += TANDA) {
     const tanda = opts.destinatarios.slice(i, i + TANDA);
-    const resultados = await Promise.all(tanda.map(enviarUno));
-    resultados.forEach((ok, idx) => {
-      if (ok) enviados++;
-      else fallidosCorreos.push(tanda[idx].correo);
+    const resultados = await Promise.all(
+      tanda.map((d) => enviarConReintento(d.correo, html(d.nombre), { asunto: opts.asunto, replyTo: TEAM_LIST[0] }))
+    );
+    resultados.forEach((r, idx) => {
+      if (r.ok) enviados++;
+      else fallidos.push({ correo: tanda[idx].correo, motivo: r.motivo });
     });
+    if (i + TANDA < opts.destinatarios.length) await esperar(400); // deja "respirar" el límite por segundo
   }
 
   // Una sola copia de resumen al equipo (no una por cada destinatario), con
-  // el detalle de a quién se le envió — no solo el número.
+  // el detalle de a quién se le envió y, si algo falló, por qué —así no hace
+  // falta revisar logs del servidor para saber qué pasó.
   if (TEAM_LIST.length) {
     await enviar({
       to: TEAM_LIST,
@@ -404,15 +434,16 @@ export async function enviarAnuncioMasivo(opts: {
           ["Evento", opts.eventoTitulo],
           ["Enviado por", opts.remitenteEmail],
           ["Entregados", String(enviados)],
-          ["Fallidos", fallidosCorreos.length ? String(fallidosCorreos.length) : null],
+          ["Fallidos", fallidos.length ? String(fallidos.length) : null],
         ])}
         <p style="font-size:13px;color:#666;margin-top:12px">Enviado a:</p>
         <p style="font-size:13px;line-height:1.7">${listaLegible(opts.destinatarios)}</p>
         ${
-          fallidosCorreos.length
-            ? `<p style="font-size:13px;color:#c0392b;margin-top:10px">No se pudo entregar a: ${esc(
-                fallidosCorreos.join(", ")
-              )}</p>`
+          fallidos.length
+            ? `<p style="font-size:13px;color:#c0392b;margin-top:10px">No se pudo entregar a:</p>
+               <p style="font-size:13px;color:#c0392b;line-height:1.7">${esc(
+                 fallidos.map((f) => `${f.correo} (${f.motivo})`).join(", ")
+               )}</p>`
             : ""
         }
         <p style="font-size:13px;color:#666;margin-top:12px">Mensaje enviado:</p>
@@ -421,5 +452,5 @@ export async function enviarAnuncioMasivo(opts: {
     });
   }
 
-  return { enviados, fallidos: fallidosCorreos.length };
+  return { enviados, fallidos: fallidos.length };
 }

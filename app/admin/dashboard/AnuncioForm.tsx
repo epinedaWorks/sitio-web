@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { ES_CORREO_ANUNCIO as ES_CORREO, dedupePorCorreo as dedupe } from "@/lib/anuncios";
 
@@ -15,15 +15,77 @@ type EventoDatos = {
   ponentes: Record<EstadoPonente, Persona[]>;
 };
 
-// Vive DENTRO del <form> para que useFormStatus refleje el envío real
-// (incluida la redirección al terminar) en vez de un estado propio que
-// nunca se resetea si el componente no se vuelve a montar.
-function BotonEnviar({ total }: { total: number }) {
+// Botón + modal de confirmación PROPIOS (no window.confirm — ese lo dibuja el
+// navegador donde quiere y no se puede centrar ni estilar). Vive DENTRO del
+// <form> para que useFormStatus refleje el envío real (incluida la
+// redirección al terminar) en vez de un estado propio que nunca se resetea
+// si el componente no se vuelve a montar.
+function BotonEnviar({ total, formRef }: { total: number; formRef: React.RefObject<HTMLFormElement> }) {
   const { pending } = useFormStatus();
+  const [confirmando, setConfirmando] = useState(false);
+
   return (
-    <button type="submit" disabled={pending || total === 0} style={{ fontWeight: 700, padding: "8px 16px" }}>
-      {pending ? "Enviando…" : `Enviar a ${total} persona${total === 1 ? "" : "s"}`}
-    </button>
+    <>
+      <button
+        type="button"
+        disabled={pending || total === 0}
+        onClick={() => setConfirmando(true)}
+        style={{ fontWeight: 700, padding: "8px 16px" }}
+      >
+        {pending ? "Enviando…" : `Enviar a ${total} persona${total === 1 ? "" : "s"}`}
+      </button>
+
+      {confirmando && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setConfirmando(false)}
+          style={{
+            position: "fixed",
+            inset: 0,
+            background: "rgba(10, 19, 16, 0.55)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+            zIndex: 1000,
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: "#fff",
+              borderRadius: 14,
+              padding: 24,
+              maxWidth: 400,
+              width: "100%",
+              boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+            }}
+          >
+            <h3 style={{ margin: "0 0 10px", fontSize: 17 }}>¿Enviar este correo?</h3>
+            <p style={{ margin: "0 0 22px", fontSize: 14, opacity: 0.8, lineHeight: 1.5 }}>
+              Se va a enviar, tal cual lo escribiste, a <b>{total} persona{total === 1 ? "" : "s"}</b>.
+              No se puede deshacer.
+            </p>
+            <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+              <button type="button" onClick={() => setConfirmando(false)}>
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setConfirmando(false);
+                  formRef.current?.requestSubmit();
+                }}
+                style={{ background: "#0a1310", color: "#fff", borderColor: "#0a1310" }}
+              >
+                Sí, enviar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 
@@ -41,6 +103,7 @@ export default function AnuncioForm({
   const [lista, setLista] = useState<Persona[]>([]);
   const [nuevoCorreo, setNuevoCorreo] = useState("");
   const [nuevoNombre, setNuevoNombre] = useState("");
+  const formRef = useRef<HTMLFormElement>(null);
 
   const evento = eventos.find((e) => e.id === eventId);
 
@@ -77,18 +140,7 @@ export default function AnuncioForm({
   }
 
   return (
-    <form
-      action={action}
-      onSubmit={(e) => {
-        const ok = window.confirm(
-          `Vas a enviar este correo, tal cual lo escribiste, a ${lista.length} persona${
-            lista.length === 1 ? "" : "s"
-          }. No se puede deshacer. ¿Continuar?`
-        );
-        if (!ok) e.preventDefault();
-      }}
-      style={{ display: "grid", gap: 14, marginTop: 20 }}
-    >
+    <form ref={formRef} action={action} style={{ display: "grid", gap: 14, marginTop: 20 }}>
       {/* La lista de abajo (ya editada a mano si hizo falta) es la ÚNICA
           fuente de a quién le llega. Viaja como JSON; el servidor la usa
           tal cual, y el asunto/mensaje se envían exactamente como se
@@ -241,7 +293,7 @@ export default function AnuncioForm({
       </label>
 
       <div>
-        <BotonEnviar total={lista.length} />
+        <BotonEnviar total={lista.length} formRef={formRef} />
       </div>
     </form>
   );

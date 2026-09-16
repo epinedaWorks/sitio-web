@@ -217,6 +217,7 @@ export default function AnuncioForm({
           name="asunto"
           required
           maxLength={200}
+          autoComplete="off"
           placeholder="Ej. Últimos detalles del Python eXposition Day 2026"
           style={{ display: "block", width: "100%", marginTop: 4, padding: 6 }}
         />

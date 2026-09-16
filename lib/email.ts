@@ -6,6 +6,10 @@ const API_KEY = process.env.RESEND_API_KEY;
 const FROM = process.env.EMAIL_FROM || "Comunidad Python Guatemala <no-reply@pythonguatemala.dev>";
 const ADMIN_URL = process.env.ADMIN_URL || "http://localhost:3000/admin/dashboard";
 
+// Netlify inyecta el hash del commit desplegado; sirve para comprobar, mirando
+// un correo ya recibido, con qué versión del código se generó de verdad.
+const BUILD_REF = (process.env.COMMIT_REF || "sin-commit-ref").slice(0, 7);
+
 // Los correos del equipo y la copia oculta se editan desde el panel
 // (/admin/dashboard/ajustes); la variable de entorno es el respaldo.
 export const getCorreosEquipo = () => getListaCorreos(SETTING_TEAM_EMAIL, process.env.TEAM_EMAIL);
@@ -347,7 +351,10 @@ export async function enviarAnuncioMasivo(opts: {
   if (opts.destinatarios.length === 0) return { enviados: 0, fallidos: 0 };
 
   const TEAM_LIST = await getCorreosEquipo();
-  const html = (nombre: string) => layout(opts.asunto, parrafos(personaliza(opts.mensaje, nombre)));
+  // Marca invisible al pie: para poder comprobar, en un correo ya recibido,
+  // con qué versión del código y a qué hora se generó de verdad.
+  const marca = `<p style="font-size:11px;color:#aaa;margin-top:22px;border-top:1px solid #eee;padding-top:8px">Generado ${new Date().toISOString()} · build ${BUILD_REF}</p>`;
+  const html = (nombre: string) => layout(opts.asunto, parrafos(personaliza(opts.mensaje, nombre)) + marca);
 
   const enviarUno = async (d: DestinatarioAnuncio): Promise<boolean> => {
     try {
@@ -410,7 +417,8 @@ export async function enviarAnuncioMasivo(opts: {
             : ""
         }
         <p style="font-size:13px;color:#666;margin-top:12px">Mensaje enviado:</p>
-        ${parrafos(opts.mensaje)}`
+        ${parrafos(opts.mensaje)}
+        ${marca}`
       ),
     });
   }

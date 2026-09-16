@@ -30,13 +30,9 @@ function BotonEnviar({ total }: { total: number }) {
 export default function AnuncioForm({
   eventos,
   action,
-  correoAdmin = "",
-  nombreAdmin = "",
 }: {
   eventos: EventoDatos[];
   action: (formData: FormData) => void | Promise<void>;
-  correoAdmin?: string;
-  nombreAdmin?: string;
 }) {
   const [eventId, setEventId] = useState(eventos[0]?.id || "");
   const [asistentesOn, setAsistentesOn] = useState(true);
@@ -74,13 +70,7 @@ export default function AnuncioForm({
     setNuevoNombre("");
   };
 
-  // Atajo: vacía la lista y deja solo al admin — para revisar cómo se ve el
-  // correo antes de mandarlo a todos. No es un "modo prueba": es el envío
-  // real, nada más que a una sola persona (uno mismo).
-  const dejarSoloMiCorreo = () => {
-    if (!correoAdmin) return;
-    setLista([{ correo: correoAdmin, nombre: nombreAdmin || correoAdmin.split("@")[0] }]);
-  };
+  const vaciarLista = () => setLista([]);
 
   if (eventos.length === 0) {
     return <p style={{ opacity: 0.7 }}>Aún no hay eventos. Crea uno en Eventos primero.</p>;
@@ -162,9 +152,9 @@ export default function AnuncioForm({
       <div style={{ border: "1px solid #e2e2e2", borderRadius: 10, padding: 12 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8 }}>
           <strong style={{ fontSize: 13 }}>Destinatarios ({lista.length})</strong>
-          {correoAdmin && (
-            <button type="button" onClick={dejarSoloMiCorreo} style={{ fontSize: 12, padding: "4px 10px" }}>
-              Vaciar y dejar solo mi correo
+          {lista.length > 0 && (
+            <button type="button" onClick={vaciarLista} style={{ fontSize: 12, padding: "4px 10px" }}>
+              Vaciar lista
             </button>
           )}
         </div>

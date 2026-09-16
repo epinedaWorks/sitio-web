@@ -22,7 +22,7 @@ export default async function AnunciosPage({
 }: {
   searchParams?: { msg?: string; n?: string; f?: string };
 }) {
-  const session = await requireAdminRole();
+  await requireAdminRole();
 
   const eventos = await prisma.event.findMany({
     orderBy: { date: "desc" },
@@ -78,12 +78,7 @@ export default async function AnunciosPage({
         </p>
       )}
 
-      <AnuncioForm
-        eventos={datos}
-        action={enviarAnuncio}
-        correoAdmin={session.user?.email || ""}
-        nombreAdmin={session.user?.name || ""}
-      />
+      <AnuncioForm eventos={datos} action={enviarAnuncio} />
     </main>
   );
 }

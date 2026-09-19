@@ -108,6 +108,31 @@ export async function GET(req: Request) {
 
   rows.forEach((r) => ws.addRow(r.map((v) => (v == null ? "" : v))));
 
+  // Ponentes: colorea las celdas de Estado (col. 1) y Modalidad (col. 2) según
+  // su valor, así se distinguen de un vistazo y en Excel también se puede
+  // "Filtrar por color".
+  if (tipo === "ponentes") {
+    const COLORES: Record<string, { bg: string; fg: string }> = {
+      ACEPTADA: { bg: "FFC6EFCE", fg: "FF006100" }, // verde
+      PENDIENTE: { bg: "FFFFEB9C", fg: "FF9C5700" }, // amarillo
+      RECHAZADA: { bg: "FFFFC7CE", fg: "FF9C0006" }, // rojo
+      CHARLA: { bg: "FFBDD7EE", fg: "FF1F4E79" }, // azul
+      TALLER: { bg: "FFE4CCF5", fg: "FF5B2C83" }, // morado
+      PROYECTO: { bg: "FFF8CBAD", fg: "FF843C0C" }, // naranja
+    };
+    ws.eachRow((row, n) => {
+      if (n === 1) return;
+      for (const col of [1, 2]) {
+        const cell = row.getCell(col);
+        const c = COLORES[String(cell.value ?? "")];
+        if (!c) continue;
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: c.bg } };
+        cell.font = { bold: true, color: { argb: c.fg } };
+        cell.alignment = { horizontal: "center" };
+      }
+    });
+  }
+
   ws.columns.forEach((col, i) => {
     let max = headers[i]?.length ?? 10;
     col.eachCell?.({ includeEmpty: false }, (c) => {

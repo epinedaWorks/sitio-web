@@ -2,6 +2,7 @@ import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { actualizarEstadoPonente, eliminarPonente } from "../actions";
 import ConfirmDelete from "../ConfirmDelete";
+import EstadoPonenteBotones from "../EstadoPonenteBotones";
 import { fechaHora } from "@/lib/fecha";
 
 export default async function PonentesAdminPage() {
@@ -96,32 +97,7 @@ export default async function PonentesAdminPage() {
               <Field k="Recibida" v={fechaHora(s.createdAt)} />
             </dl>
 
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-              <form
-                action={async () => {
-                  "use server";
-                  await actualizarEstadoPonente(s.id, "ACEPTADA");
-                }}
-              >
-                <button type="submit">Aceptar</button>
-              </form>
-              <form
-                action={async () => {
-                  "use server";
-                  await actualizarEstadoPonente(s.id, "RECHAZADA");
-                }}
-              >
-                <button type="submit">Rechazar</button>
-              </form>
-              <form
-                action={async () => {
-                  "use server";
-                  await actualizarEstadoPonente(s.id, "PENDIENTE");
-                }}
-              >
-                <button type="submit">Volver a pendiente</button>
-              </form>
-            </div>
+            <EstadoPonenteBotones id={s.id} estado={s.status} actualizar={actualizarEstadoPonente} />
           </details>
 
           <ConfirmDelete

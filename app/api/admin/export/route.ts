@@ -51,20 +51,24 @@ export async function GET(req: Request) {
       orderBy: { createdAt: "desc" },
       include: { event: true },
     });
+    // Orden pedido: Estado, Modalidad, Nombre, Teléfono, Tema y luego el resto
+    // en el orden que ya tenían (headers y rows deben mantenerse alineados).
     headers = [
-      "Nombre", "Correo", "Teléfono", "Modalidad", "Tema", "Descripción", "Nivel", "Bio",
+      "Estado", "Modalidad", "Nombre", "Teléfono", "Tema",
+      "Correo", "Descripción", "Nivel", "Bio",
       "Integrantes del equipo", "Necesidades / logística",
       "¿Sigue a la comunidad?", "LinkedIn", "Instagram", "Empresa", "Cargo", "Edad",
       "Foto (URL)", "¿De otro país?", "¿Cómo se enteró?", "Comentarios",
-      "Autoriza compartir datos", "Estado", "Evento", "Fecha",
+      "Autoriza compartir datos", "Evento", "Fecha",
     ];
     rows = data.map((s) => [
-      s.nombre, s.correo, s.telefono, s.modalidad, s.tema, s.descripcion, s.nivel, s.bio,
+      s.status, s.modalidad, s.nombre, s.telefono, s.tema,
+      s.correo, s.descripcion, s.nivel, s.bio,
       s.integrantes, s.necesidades,
       s.sigueComunidad == null ? "" : s.sigueComunidad ? "Sí" : "No",
       s.linkedin, s.instagram, s.empresa, s.cargo, s.edad,
       s.fotoUrl, s.pais, s.comoSeEntero, s.comentarios,
-      s.compartirDatos ? "Sí" : "No", s.status, s.event.title, fmt(s.createdAt),
+      s.compartirDatos ? "Sí" : "No", s.event.title, fmt(s.createdAt),
     ]);
   }
 

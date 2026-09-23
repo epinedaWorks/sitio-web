@@ -5,7 +5,15 @@ import ConfirmDelete from "../ConfirmDelete";
 import EstadoPonenteBotones from "../EstadoPonenteBotones";
 import ModalidadSelector from "../ModalidadSelector";
 import ContactadoToggle from "../ContactadoToggle";
+import AceptarRapido from "../AceptarRapido";
 import { fechaHora } from "@/lib/fecha";
+
+const MODALIDADES = ["CHARLA", "TALLER", "PROYECTO"] as const;
+const ETIQUETA_MODALIDAD: Record<(typeof MODALIDADES)[number], string> = {
+  CHARLA: "Charlas",
+  TALLER: "Talleres",
+  PROYECTO: "Proyectos",
+};
 
 export default async function PonentesAdminPage() {
   const session = await requireAdminSession();
@@ -13,6 +21,15 @@ export default async function PonentesAdminPage() {
   const submissions = await prisma.speakerSubmission.findMany({
     orderBy: { createdAt: "desc" },
     include: { event: true },
+  });
+
+  const porEstado = { PENDIENTE: 0, ACEPTADA: 0, RECHAZADA: 0 };
+  const porModalidad = Object.fromEntries(
+    MODALIDADES.map((m) => [m, { PENDIENTE: 0, ACEPTADA: 0, RECHAZADA: 0 }])
+  ) as Record<(typeof MODALIDADES)[number], { PENDIENTE: number; ACEPTADA: number; RECHAZADA: number }>;
+  submissions.forEach((s) => {
+    porEstado[s.status]++;
+    porModalidad[s.modalidad][s.status]++;
   });
 
   return (
@@ -25,6 +42,56 @@ export default async function PonentesAdminPage() {
           Estás en modo solo lectura: puedes ver todo, pero no aceptar, rechazar, cambiar ni borrar nada.
         </p>
       )}
+
+      {/* Resumen tipo dashboard: cuántas van en cada estado, total y por modalidad */}
+      <div
+        style={{
+          display: "grid",
+          gap: 14,
+          border: "1px solid #e2e2e2",
+          borderRadius: 10,
+          padding: "14px 16px",
+          margin: "16px 0",
+          background: "#fafafa",
+        }}
+      >
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+          <Stat label="Pendientes" valor={porEstado.PENDIENTE} bg="#fdebd0" fg="#8a5a00" />
+          <Stat label="Aceptadas" valor={porEstado.ACEPTADA} bg="#d5f5e3" fg="#1b5e20" />
+          <Stat label="Rechazadas" valor={porEstado.RECHAZADA} bg="#fadbd8" fg="#8e2a22" />
+        </div>
+        <div>
+          <p style={{ fontSize: 12, fontWeight: 600, opacity: 0.65, margin: "0 0 6px", textTransform: "uppercase" }}>
+            Por modalidad
+          </p>
+          <table style={{ borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr>
+                <th style={cabecera}></th>
+                <th style={cabecera}>Pendientes</th>
+                <th style={cabecera}>Aceptadas</th>
+                <th style={cabecera}>Rechazadas</th>
+                <th style={cabecera}>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {MODALIDADES.map((m) => {
+                const c = porModalidad[m];
+                const total = c.PENDIENTE + c.ACEPTADA + c.RECHAZADA;
+                return (
+                  <tr key={m}>
+                    <td style={{ ...celda, fontWeight: 600 }}>{ETIQUETA_MODALIDAD[m]}</td>
+                    <td style={celda}>{c.PENDIENTE}</td>
+                    <td style={celda}>{c.ACEPTADA}</td>
+                    <td style={celda}>{c.RECHAZADA}</td>
+                    <td style={{ ...celda, fontWeight: 600 }}>{total}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
       <p style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <a
@@ -127,19 +194,50 @@ export default async function PonentesAdminPage() {
             </div>
           </details>
 
-          <ConfirmDelete
-            compact
-            mensaje={`¿Borrar la postulación de ${s.nombre} ("${s.tema}")? Esta acción no se puede deshacer.`}
-            action={async () => {
-              "use server";
-              await eliminarPonente(s.id);
-            }}
-          />
+          <div style={{ display: "grid", gap: 6, justifyItems: "end" }}>
+            <AceptarRapido id={s.id} estado={s.status} actualizar={actualizarEstadoPonente} />
+            <ConfirmDelete
+              compact
+              mensaje={`¿Borrar la postulación de ${s.nombre} ("${s.tema}")? Esta acción no se puede deshacer.`}
+              action={async () => {
+                "use server";
+                await eliminarPonente(s.id);
+              }}
+            />
+          </div>
         </div>
       ))}
     </main>
   );
 }
+
+function Stat({ label, valor, bg, fg }: { label: string; valor: number; bg: string; fg: string }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "baseline",
+        gap: 8,
+        padding: "8px 14px",
+        borderRadius: 10,
+        background: bg,
+        color: fg,
+      }}
+    >
+      <span style={{ fontSize: 22, fontWeight: 700 }}>{valor}</span>
+      <span style={{ fontSize: 13, fontWeight: 600 }}>{label}</span>
+    </div>
+  );
+}
+
+const cabecera: React.CSSProperties = {
+  textAlign: "left",
+  padding: "3px 12px 3px 0",
+  fontWeight: 600,
+  opacity: 0.6,
+  fontSize: 12,
+};
+const celda: React.CSSProperties = { padding: "3px 12px 3px 0" };
 
 function Field({ k, v, pre, link }: { k: string; v?: string | null; pre?: boolean; link?: boolean }) {
   if (!v) return null;

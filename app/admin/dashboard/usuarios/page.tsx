@@ -1,7 +1,8 @@
 import { requireAdminRole } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
-import { crearUsuario, eliminarUsuario } from "../actions";
+import { crearUsuario, eliminarUsuario, actualizarRolUsuario } from "../actions";
 import ConfirmDelete from "../ConfirmDelete";
+import RolSelector from "../RolSelector";
 
 export const dynamic = "force-dynamic";
 
@@ -12,6 +13,8 @@ const MSG: Record<string, [string, string]> = {
   datos: ["Revisa los datos: correo válido y contraseña de al menos 8 caracteres.", "crimson"],
   propio: ["No puedes eliminar tu propia cuenta.", "crimson"],
   ultimo: ["No puedes eliminar el último usuario.", "crimson"],
+  propiorol: ["No puedes cambiar tu propio rol — pídeselo a otro Admin.", "crimson"],
+  ultimoadmin: ["No puedes quitarle Admin al último administrador que queda.", "crimson"],
 };
 
 export default async function UsuariosPage({
@@ -83,17 +86,21 @@ export default async function UsuariosPage({
         >
           <div style={{ flex: 1, minWidth: 0 }}>
             <b>{u.name}</b>{" "}
-            <span
-              style={{
-                fontSize: 12,
-                padding: "2px 8px",
-                borderRadius: 999,
-                background: u.role === "ADMIN" ? "#d5f5e3" : u.role === "VIEWER" ? "#eee" : "#eef",
-                color: u.role === "ADMIN" ? "#1b5e20" : u.role === "VIEWER" ? "#555" : "#334",
-              }}
-            >
-              {u.role === "VIEWER" ? "Solo lectura" : u.role}
-            </span>
+            {u.email === yo ? (
+              <span
+                style={{
+                  fontSize: 12,
+                  padding: "2px 8px",
+                  borderRadius: 999,
+                  background: u.role === "ADMIN" ? "#d5f5e3" : u.role === "VIEWER" ? "#eee" : "#eef",
+                  color: u.role === "ADMIN" ? "#1b5e20" : u.role === "VIEWER" ? "#555" : "#334",
+                }}
+              >
+                {u.role === "VIEWER" ? "Solo lectura" : u.role}
+              </span>
+            ) : (
+              <RolSelector id={u.id} rol={u.role} actualizar={actualizarRolUsuario} />
+            )}
             <div style={{ fontSize: 13, opacity: 0.7 }}>
               {u.email}
               {u.email === yo ? " · tú" : ""}

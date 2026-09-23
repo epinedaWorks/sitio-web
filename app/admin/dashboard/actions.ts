@@ -58,6 +58,25 @@ export async function eliminarUsuario(id: string) {
   redirect("/admin/dashboard/usuarios?msg=eliminado");
 }
 
+// Cambia el rol de un usuario que ya existe. No se puede cambiar el rol
+// propio (para no encerrarse a uno mismo por accidente) ni quitarle ADMIN
+// al último administrador que queda.
+export async function actualizarRolUsuario(id: string, role: "ADMIN" | "EDITOR" | "VIEWER") {
+  const session = await requireAdminRole();
+  const yo = (session.user as { email?: string } | undefined)?.email;
+  const objetivo = await prisma.adminUser.findUnique({ where: { id } });
+  if (!objetivo) return;
+  if (objetivo.email === yo) redirect("/admin/dashboard/usuarios?msg=propiorol");
+
+  if (objetivo.role === "ADMIN" && role !== "ADMIN") {
+    const totalAdmins = await prisma.adminUser.count({ where: { role: "ADMIN" } });
+    if (totalAdmins <= 1) redirect("/admin/dashboard/usuarios?msg=ultimoadmin");
+  }
+
+  await prisma.adminUser.update({ where: { id }, data: { role } });
+  revalidatePath("/admin/dashboard/usuarios");
+}
+
 // Guarda los correos del equipo y la copia oculta (solo ADMIN).
 export async function guardarAjustes(formData: FormData) {
   await requireAdminRole();

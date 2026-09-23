@@ -3,10 +3,12 @@ import Footer from "../components/Footer";
 import ToTop from "../components/ToTop";
 import ClientEffects from "../components/ClientEffects";
 import RegistroModales from "../components/RegistroModales";
+import { getCupos } from "@/lib/settings";
 
 // Envoltura del sitio público (tema oscuro, nav, footer, modales).
 // El panel /admin NO pasa por aquí: tiene su propio layout claro.
-export default function PublicLayout({ children }: { children: React.ReactNode }) {
+export default async function PublicLayout({ children }: { children: React.ReactNode }) {
+  const cupos = await getCupos();
   return (
     <>
       <a className="skip-link" href="#contenido">Saltar al contenido</a>
@@ -20,7 +22,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
 
       <ToTop />
       <ClientEffects />
-      <RegistroModales />
+      <RegistroModales cupos={cupos} />
     </>
   );
 }

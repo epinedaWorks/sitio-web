@@ -37,3 +37,51 @@ export async function getListaCorreos(key: string, envFallback?: string): Promis
 // Claves usadas
 export const SETTING_TEAM_EMAIL = "teamEmail";
 export const SETTING_EMAIL_BCC = "emailBcc";
+
+// ---- Cupos de los formularios públicos (/admin/dashboard/cupos) ----
+export const SETTING_INSCRIPCION_ABIERTA = "inscripcionAbierta";
+export const SETTING_INSCRIPCION_MENSAJE = "inscripcionMensaje";
+export const SETTING_CHARLA_ABIERTA = "charlaAbierta";
+export const SETTING_TALLER_ABIERTA = "tallerAbierta";
+export const SETTING_PROYECTO_ABIERTA = "proyectoAbierta";
+export const SETTING_MODALIDAD_MENSAJE = "modalidadMensaje";
+
+const MENSAJE_INSCRIPCION_POR_DEFECTO =
+  "Ya se llenó el cupo de inscripción para este evento. ¡Gracias por tu interés! Síguenos en redes para enterarte de la próxima edición.";
+const MENSAJE_MODALIDAD_POR_DEFECTO = "Ya se llenó el cupo para esta modalidad.";
+
+// Una casilla cerrada guarda "0"; cualquier otra cosa (incluido que nunca se
+// haya tocado el ajuste) se trata como abierto — así un formulario nuevo
+// empieza disponible sin que haga falta configurar nada primero.
+export async function estaAbierto(key: string): Promise<boolean> {
+  return (await getSetting(key)) !== "0";
+}
+
+export type Cupos = {
+  inscripcionAbierta: boolean;
+  inscripcionMensaje: string;
+  charlaAbierta: boolean;
+  tallerAbierta: boolean;
+  proyectoAbierta: boolean;
+  modalidadMensaje: string;
+};
+
+export async function getCupos(): Promise<Cupos> {
+  const [inscripcionAbierta, inscripcionMensaje, charlaAbierta, tallerAbierta, proyectoAbierta, modalidadMensaje] =
+    await Promise.all([
+      estaAbierto(SETTING_INSCRIPCION_ABIERTA),
+      getSetting(SETTING_INSCRIPCION_MENSAJE),
+      estaAbierto(SETTING_CHARLA_ABIERTA),
+      estaAbierto(SETTING_TALLER_ABIERTA),
+      estaAbierto(SETTING_PROYECTO_ABIERTA),
+      getSetting(SETTING_MODALIDAD_MENSAJE),
+    ]);
+  return {
+    inscripcionAbierta,
+    inscripcionMensaje: inscripcionMensaje || MENSAJE_INSCRIPCION_POR_DEFECTO,
+    charlaAbierta,
+    tallerAbierta,
+    proyectoAbierta,
+    modalidadMensaje: modalidadMensaje || MENSAJE_MODALIDAD_POR_DEFECTO,
+  };
+}

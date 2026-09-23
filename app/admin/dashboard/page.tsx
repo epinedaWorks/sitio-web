@@ -59,6 +59,14 @@ export default async function DashboardHome() {
             desc="A qué correos llegan los avisos"
           />
         )}
+        {esAdmin && (
+          <Card
+            href="/admin/dashboard/cupos"
+            icon="🚦"
+            title="Cupos de los formularios"
+            desc="Abrir/cerrar inscripción o una modalidad de ponentes"
+          />
+        )}
         <Card
           href="/admin/dashboard/cuenta"
           icon="🔑"

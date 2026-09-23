@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
 import { EVENT_SLUG } from "../site-data";
+import type { Cupos } from "@/lib/settings";
 
 type Modo = null | "inscripcion" | "ponente" | "contacto";
 type Estado = "idle" | "enviando" | "ok";
@@ -15,8 +16,9 @@ const RUTA_A_MODO: Record<string, Exclude<Modo, null>> = {
   "/contacto": "contacto",
 };
 
-export default function RegistroModales() {
+export default function RegistroModales({ cupos }: { cupos: Cupos }) {
   const pathname = usePathname();
+  const ponenteCerrado = !cupos.charlaAbierta && !cupos.tallerAbierta && !cupos.proyectoAbierta;
   const [modo, setModo] = useState<Modo>(null);
   const [estado, setEstado] = useState<Estado>("idle");
   const [error, setError] = useState("");
@@ -248,6 +250,24 @@ export default function RegistroModales() {
                   Cerrar
                 </button>
               </div>
+            ) : modo === "inscripcion" && !cupos.inscripcionAbierta ? (
+              <div className="modal-done">
+                <div className="big">🙌</div>
+                <h3>Cupo lleno</h3>
+                <p>{cupos.inscripcionMensaje}</p>
+                <button className="btn btn-primary" onClick={cerrar}>
+                  Cerrar
+                </button>
+              </div>
+            ) : modo === "ponente" && ponenteCerrado ? (
+              <div className="modal-done">
+                <div className="big">🙌</div>
+                <h3>Cupo lleno</h3>
+                <p>{cupos.modalidadMensaje}</p>
+                <button className="btn btn-primary" onClick={cerrar}>
+                  Cerrar
+                </button>
+              </div>
             ) : (
               <>
                 <div className="modal-head">
@@ -457,10 +477,19 @@ export default function RegistroModales() {
                         <option value="" disabled>
                           Elige una modalidad
                         </option>
-                        <option value="CHARLA">Charla / Conferencia</option>
-                        <option value="TALLER">Taller</option>
-                        <option value="PROYECTO">Exposición de proyecto</option>
+                        <option value="CHARLA" disabled={!cupos.charlaAbierta}>
+                          Charla / Conferencia{!cupos.charlaAbierta ? " (cupo lleno)" : ""}
+                        </option>
+                        <option value="TALLER" disabled={!cupos.tallerAbierta}>
+                          Taller{!cupos.tallerAbierta ? " (cupo lleno)" : ""}
+                        </option>
+                        <option value="PROYECTO" disabled={!cupos.proyectoAbierta}>
+                          Exposición de proyecto{!cupos.proyectoAbierta ? " (cupo lleno)" : ""}
+                        </option>
                       </select>
+                      {(!cupos.charlaAbierta || !cupos.tallerAbierta || !cupos.proyectoAbierta) && (
+                        <span className="form-hint">{cupos.modalidadMensaje}</span>
+                      )}
                     </div>
                     <div className="form-field">
                       <label htmlFor="p-tema">Nombre de tu propuesta *</label>

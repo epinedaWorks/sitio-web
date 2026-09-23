@@ -37,7 +37,9 @@ export default async function UsuariosPage({
       <p style={{ opacity: 0.75 }}>
         Quién puede entrar a este panel. <b>Admin</b> puede todo (incluye crear usuarios y editar
         los correos). <b>Editor</b> gestiona eventos, galería, ponentes, inscritos y contacto, pero
-        no puede tocar usuarios ni la configuración de correo.
+        no puede tocar usuarios ni la configuración de correo. <b>Solo lectura</b> entra y ve todo
+        igual, pero no puede crear, cambiar ni borrar nada — ideal para alguien que solo necesita
+        consultar (dar seguimiento, revisar datos) sin riesgo de tocar algo por accidente.
       </p>
 
       {aviso && <p style={{ color: aviso[1], fontWeight: 600 }}>{aviso[0]}</p>}
@@ -57,6 +59,7 @@ export default async function UsuariosPage({
         <select name="role" defaultValue="EDITOR" style={input}>
           <option value="EDITOR">Editor</option>
           <option value="ADMIN">Admin</option>
+          <option value="VIEWER">Solo lectura</option>
         </select>
         <button type="submit" style={{ ...input, cursor: "pointer", fontWeight: 600 }}>
           Crear usuario
@@ -85,11 +88,11 @@ export default async function UsuariosPage({
                 fontSize: 12,
                 padding: "2px 8px",
                 borderRadius: 999,
-                background: u.role === "ADMIN" ? "#d5f5e3" : "#eef",
-                color: u.role === "ADMIN" ? "#1b5e20" : "#334",
+                background: u.role === "ADMIN" ? "#d5f5e3" : u.role === "VIEWER" ? "#eee" : "#eef",
+                color: u.role === "ADMIN" ? "#1b5e20" : u.role === "VIEWER" ? "#555" : "#334",
               }}
             >
-              {u.role}
+              {u.role === "VIEWER" ? "Solo lectura" : u.role}
             </span>
             <div style={{ fontSize: 13, opacity: 0.7 }}>
               {u.email}

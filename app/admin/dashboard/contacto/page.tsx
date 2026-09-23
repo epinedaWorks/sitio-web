@@ -5,7 +5,8 @@ import ConfirmDelete from "../ConfirmDelete";
 import { fechaHora } from "@/lib/fecha";
 
 export default async function ContactoAdminPage() {
-  await requireAdminSession();
+  const session = await requireAdminSession();
+  const soloLectura = (session.user as { role?: string } | undefined)?.role === "VIEWER";
   const mensajes = await prisma.contactMessage.findMany({ orderBy: { createdAt: "desc" } });
   const pendientes = mensajes.filter((m) => !m.atendido).length;
 
@@ -15,6 +16,12 @@ export default async function ContactoAdminPage() {
       <p style={{ opacity: 0.75 }}>
         {mensajes.length} en total · {pendientes} sin atender
       </p>
+
+      {soloLectura && (
+        <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, background: "#eee", color: "#555" }}>
+          Estás en modo solo lectura: puedes ver todo, pero no marcar como atendido ni borrar nada.
+        </p>
+      )}
 
       <p style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <a

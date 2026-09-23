@@ -23,6 +23,7 @@ model AdminUser {
 enum Role {
   ADMIN
   EDITOR
+  VIEWER // solo lectura: entra al panel y ve todo, pero no puede crear, cambiar ni borrar nada
 }
 
 // Evento (ej. XPDay 2026)

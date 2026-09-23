@@ -8,7 +8,8 @@ import ContactadoToggle from "../ContactadoToggle";
 import { fechaHora } from "@/lib/fecha";
 
 export default async function PonentesAdminPage() {
-  await requireAdminSession();
+  const session = await requireAdminSession();
+  const soloLectura = (session.user as { role?: string } | undefined)?.role === "VIEWER";
   const submissions = await prisma.speakerSubmission.findMany({
     orderBy: { createdAt: "desc" },
     include: { event: true },
@@ -18,6 +19,12 @@ export default async function PonentesAdminPage() {
     <main style={{ maxWidth: 1000, margin: "40px auto", fontFamily: "sans-serif" }}>
       <h1>Postulaciones de ponentes</h1>
       <p style={{ opacity: 0.7 }}>{submissions.length} en total. Haz clic en una para ver todos los datos.</p>
+
+      {soloLectura && (
+        <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, background: "#eee", color: "#555" }}>
+          Estás en modo solo lectura: puedes ver todo, pero no aceptar, rechazar, cambiar ni borrar nada.
+        </p>
+      )}
 
       <p style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <a

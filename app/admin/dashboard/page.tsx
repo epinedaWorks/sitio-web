@@ -2,7 +2,11 @@ import Link from "next/link";
 import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 
-export default async function DashboardHome() {
+export default async function DashboardHome({
+  searchParams,
+}: {
+  searchParams?: { msg?: string };
+}) {
   const session = await requireAdminSession();
   const role = (session.user as { role?: string } | undefined)?.role;
   const esAdmin = role === "ADMIN";
@@ -20,8 +24,14 @@ export default async function DashboardHome() {
     <main style={{ maxWidth: 900, margin: "40px auto", padding: "0 16px", fontFamily: "sans-serif" }}>
       <h1>Panel de Python Guatemala</h1>
       <p style={{ opacity: 0.8 }}>
-        Sesión: {session.user?.email} · <b>{role}</b>
+        Sesión: {session.user?.email} · <b>{role === "VIEWER" ? "Solo lectura" : role}</b>
       </p>
+
+      {searchParams?.msg === "solo_lectura" && (
+        <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, background: "#fdebd0", color: "#8a5a00" }}>
+          Tu cuenta es de solo lectura: puedes ver todo, pero no crear, cambiar ni borrar nada.
+        </p>
+      )}
 
       <h2 style={{ fontSize: "1.1rem", margin: "28px 0 12px", opacity: 0.7 }}>Gestión</h2>
       <div style={grid}>

@@ -8,7 +8,7 @@ import { prisma } from "@/lib/prisma";
 import { fechaDesdeInput } from "@/lib/fecha";
 import { enviarAnuncioMasivo, type DestinatarioAnuncio } from "@/lib/email";
 import { ES_CORREO_ANUNCIO, dedupePorCorreo } from "@/lib/anuncios";
-import { requireAdminSession, requireAdminRole } from "@/lib/require-admin";
+import { requireAdminSession, requireAdminRole, requireEditorSession } from "@/lib/require-admin";
 import {
   invalidarSettingsCache,
   SETTING_TEAM_EMAIL,
@@ -29,7 +29,8 @@ export async function crearUsuario(formData: FormData) {
   const name = String(formData.get("name") || "").trim();
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const password = String(formData.get("password") || "");
-  const role = String(formData.get("role") || "EDITOR") === "ADMIN" ? "ADMIN" : "EDITOR";
+  const roleRaw = String(formData.get("role") || "EDITOR");
+  const role = roleRaw === "ADMIN" ? "ADMIN" : roleRaw === "VIEWER" ? "VIEWER" : "EDITOR";
 
   if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8) {
     redirect("/admin/dashboard/usuarios?msg=datos");
@@ -111,7 +112,7 @@ export async function cambiarPassword(formData: FormData) {
 }
 
 export async function crearEvento(formData: FormData) {
-  await requireAdminSession();
+  await requireEditorSession();
 
   const title = String(formData.get("title") || "").trim();
   const slug = String(formData.get("slug") || "").trim();
@@ -145,7 +146,7 @@ export async function crearEvento(formData: FormData) {
 
 // Edita un evento existente (título, slug, fecha, lugar, descripción, estado).
 export async function editarEvento(id: string, formData: FormData) {
-  await requireAdminSession();
+  await requireEditorSession();
 
   const title = String(formData.get("title") || "").trim();
   const slug = String(formData.get("slug") || "").trim();
@@ -177,7 +178,7 @@ export async function editarEvento(id: string, formData: FormData) {
 }
 
 export async function togglePublicado(eventId: string, published: boolean) {
-  await requireAdminSession();
+  await requireEditorSession();
   const e = await prisma.event.update({ where: { id: eventId }, data: { published } });
   revalidatePath("/admin/dashboard/eventos");
   revalidatePath("/eventos");
@@ -186,7 +187,7 @@ export async function togglePublicado(eventId: string, published: boolean) {
 }
 
 export async function crearAlbum(formData: FormData) {
-  await requireAdminSession();
+  await requireEditorSession();
 
   const eventId = String(formData.get("eventId") || "");
   const title = String(formData.get("title") || "");
@@ -201,7 +202,7 @@ export async function crearAlbum(formData: FormData) {
 }
 
 export async function agregarFoto(formData: FormData) {
-  await requireAdminSession();
+  await requireEditorSession();
 
   const albumId = String(formData.get("albumId") || "");
   const url = String(formData.get("url") || "").trim();
@@ -217,7 +218,7 @@ export async function agregarFoto(formData: FormData) {
 }
 
 export async function eliminarFoto(imageId: string) {
-  await requireAdminSession();
+  await requireEditorSession();
   const img = await prisma.galleryImage.delete({ where: { id: imageId } });
   // Si la foto era un archivo subido, borra también el blob.
   const m = img.url.match(/^\/api\/img\/(.+)$/);
@@ -237,7 +238,7 @@ export async function actualizarEstadoPonente(
   submissionId: string,
   status: "PENDIENTE" | "ACEPTADA" | "RECHAZADA"
 ) {
-  await requireAdminSession();
+  await requireEditorSession();
   await prisma.speakerSubmission.update({
     where: { id: submissionId },
     data: { status },
@@ -251,7 +252,7 @@ export async function actualizarModalidadPonente(
   submissionId: string,
   modalidad: "CHARLA" | "TALLER" | "PROYECTO"
 ) {
-  await requireAdminSession();
+  await requireEditorSession();
   await prisma.speakerSubmission.update({
     where: { id: submissionId },
     data: { modalidad },
@@ -261,7 +262,7 @@ export async function actualizarModalidadPonente(
 
 // Marca si ya se le escribió a la persona sobre su propuesta.
 export async function actualizarContactadoPonente(submissionId: string, contactado: boolean) {
-  await requireAdminSession();
+  await requireEditorSession();
   await prisma.speakerSubmission.update({
     where: { id: submissionId },
     data: { contactado },
@@ -316,7 +317,7 @@ export async function guardarCupos(formData: FormData) {
 
 // Mueve una foto una posición arriba o abajo dentro de su álbum.
 export async function moverFoto(id: string, dir: "arriba" | "abajo") {
-  await requireAdminSession();
+  await requireEditorSession();
   const foto = await prisma.galleryImage.findUnique({ where: { id } });
   if (!foto) return;
   const vecino = await prisma.galleryImage.findFirst({
@@ -336,14 +337,14 @@ export async function moverFoto(id: string, dir: "arriba" | "abajo") {
 }
 
 export async function eliminarInscrito(id: string) {
-  await requireAdminSession();
+  await requireEditorSession();
   await prisma.attendeeRegistration.delete({ where: { id } });
   revalidatePath("/admin/dashboard/inscritos");
 }
 
 // Marca / desmarca la asistencia de una persona a mano.
 export async function toggleCheckin(id: string) {
-  const session = await requireAdminSession();
+  const session = await requireEditorSession();
   const reg = await prisma.attendeeRegistration.findUnique({ where: { id } });
   if (!reg) return;
   await prisma.attendeeRegistration.update({
@@ -360,19 +361,19 @@ export async function toggleCheckin(id: string) {
 }
 
 export async function eliminarContacto(id: string) {
-  await requireAdminSession();
+  await requireEditorSession();
   await prisma.contactMessage.delete({ where: { id } });
   revalidatePath("/admin/dashboard/contacto");
 }
 
 export async function marcarContacto(id: string, atendido: boolean) {
-  await requireAdminSession();
+  await requireEditorSession();
   await prisma.contactMessage.update({ where: { id }, data: { atendido } });
   revalidatePath("/admin/dashboard/contacto");
 }
 
 export async function eliminarPonente(id: string) {
-  await requireAdminSession();
+  await requireEditorSession();
   await prisma.speakerSubmission.delete({ where: { id } });
   revalidatePath("/admin/dashboard/ponentes");
 }

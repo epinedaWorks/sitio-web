@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { revalidatePath } from "next/cache";
 import { getStore } from "@netlify/blobs";
-import { requireAdminSession } from "@/lib/require-admin";
+import { requireEditorSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 
 // Sube UNA foto a un álbum. El cliente (SubirFotos.tsx) llama a este endpoint
@@ -16,7 +16,7 @@ const EXT: Record<string, string> = {
 };
 
 export async function POST(req: Request) {
-  await requireAdminSession();
+  await requireEditorSession(); // subir fotos es escribir datos: VIEWER no puede
 
   const form = await req.formData();
   const albumId = String(form.get("albumId") || "");

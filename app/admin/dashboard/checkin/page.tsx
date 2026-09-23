@@ -6,7 +6,8 @@ import Scanner from "./Scanner";
 export const dynamic = "force-dynamic";
 
 export default async function CheckinPage() {
-  await requireAdminSession();
+  const session = await requireAdminSession();
+  const soloLectura = (session.user as { role?: string } | undefined)?.role === "VIEWER";
 
   const [total, ingresaron] = await Promise.all([
     prisma.attendeeRegistration.count(),
@@ -37,7 +38,14 @@ export default async function CheckinPage() {
       </Link>
 
       <div style={{ marginTop: 18 }}>
-        <Scanner />
+        {soloLectura ? (
+          <p style={{ padding: "10px 14px", borderRadius: 8, fontSize: 14, background: "#eee", color: "#555" }}>
+            Estás en modo solo lectura: no puedes registrar asistencia. Pide a un Admin o Editor que
+            escanee, o consulta la lista de inscritos.
+          </p>
+        ) : (
+          <Scanner />
+        )}
       </div>
 
       <p style={{ marginTop: 24, fontSize: 13 }}>

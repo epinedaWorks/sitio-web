@@ -5,7 +5,8 @@ import ConfirmDelete from "../ConfirmDelete";
 import { fechaHora, soloHora } from "@/lib/fecha";
 
 export default async function InscritosAdminPage() {
-  await requireAdminSession();
+  const session = await requireAdminSession();
+  const soloLectura = (session.user as { role?: string } | undefined)?.role === "VIEWER";
   const registrations = await prisma.attendeeRegistration.findMany({
     orderBy: { createdAt: "desc" },
     include: { event: true },
@@ -21,6 +22,12 @@ export default async function InscritosAdminPage() {
         Total: {registrations.length} · Ingresaron: {ingresaron} · Autorizan compartir datos:{" "}
         {compartenDatos}
       </p>
+
+      {soloLectura && (
+        <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, background: "#eee", color: "#555" }}>
+          Estás en modo solo lectura: puedes ver y exportar, pero no marcar asistencia ni borrar nada.
+        </p>
+      )}
 
       <p style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <a

@@ -4,7 +4,8 @@ import { crearAlbum, agregarFoto, eliminarFoto, moverFoto } from "../actions";
 import SubirFotos from "../SubirFotos";
 
 export default async function GaleriaAdminPage() {
-  await requireAdminSession();
+  const session = await requireAdminSession();
+  const soloLectura = (session.user as { role?: string } | undefined)?.role === "VIEWER";
 
   const eventos = await prisma.event.findMany({ orderBy: { date: "desc" } });
   const albumes = await prisma.album.findMany({
@@ -18,6 +19,12 @@ export default async function GaleriaAdminPage() {
       <p style={{ opacity: 0.75 }}>
         Cada evento puede tener varios álbumes (uno por actividad: charlas, talleres, networking, etc.)
       </p>
+
+      {soloLectura && (
+        <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, background: "#eee", color: "#555" }}>
+          Estás en modo solo lectura: puedes ver todo, pero no crear, subir ni cambiar nada aquí.
+        </p>
+      )}
 
       <h3>Crear álbum</h3>
       <form action={crearAlbum} style={{ display: "grid", gap: 10, maxWidth: 480, marginBottom: 32 }}>

@@ -1,11 +1,11 @@
-import { requireAdminSession } from "@/lib/require-admin";
+import { requireEditorSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { tokenDeQR } from "@/lib/urls";
 
 // Registra la asistencia de una persona a partir del QR (o de un correo).
 // Respuestas: { status: "ok" | "repetido" | "noexiste", nombre?, rol?, evento?, checkedInAt? }
 export async function POST(req: Request) {
-  const session = await requireAdminSession();
+  const session = await requireEditorSession(); // marcar asistencia es escribir datos: VIEWER no puede
   const quien = (session.user as { email?: string } | undefined)?.email ?? null;
 
   const body = await req.json().catch(() => ({}));

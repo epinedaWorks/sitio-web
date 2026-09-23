@@ -15,13 +15,20 @@ export default async function EventosAdminPage({
 }: {
   searchParams?: { msg?: string };
 }) {
-  await requireAdminSession();
+  const session = await requireAdminSession();
+  const soloLectura = (session.user as { role?: string } | undefined)?.role === "VIEWER";
   const eventos = await prisma.event.findMany({ orderBy: { date: "desc" } });
   const aviso = searchParams?.msg ? MENSAJES[searchParams.msg] : null;
 
   return (
     <main style={{ maxWidth: 900, margin: "40px auto", fontFamily: "sans-serif" }}>
       <h1>Eventos</h1>
+
+      {soloLectura && (
+        <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, background: "#eee", color: "#555" }}>
+          Estás en modo solo lectura: puedes ver todo, pero no crear ni cambiar nada aquí.
+        </p>
+      )}
 
       {aviso && (
         <p

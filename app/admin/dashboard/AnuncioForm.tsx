@@ -6,14 +6,35 @@ import { ES_CORREO_ANUNCIO as ES_CORREO, dedupePorCorreo as dedupe } from "@/lib
 
 type Persona = { correo: string; nombre: string };
 type EstadoPonente = "TODOS" | "ACEPTADA" | "PENDIENTE" | "RECHAZADA";
+type ModalidadPonente = "TODAS" | "CHARLA" | "TALLER" | "PROYECTO";
+
+type PonenteDatos = Persona & {
+  status: "PENDIENTE" | "ACEPTADA" | "RECHAZADA";
+  modalidad: "CHARLA" | "TALLER" | "PROYECTO";
+};
 
 type EventoDatos = {
   id: string;
   title: string;
   slug: string;
   asistentes: Persona[];
-  ponentes: Record<EstadoPonente, Persona[]>;
+  ponentes: PonenteDatos[];
 };
+
+const ETIQUETA_MODALIDAD: Record<Exclude<ModalidadPonente, "TODAS">, string> = {
+  CHARLA: "Charlas",
+  TALLER: "Talleres",
+  PROYECTO: "Proyectos",
+};
+
+// Filtra los ponentes de un evento por estado y modalidad a la vez (por
+// ejemplo "solo talleristas aceptados") — cada modalidad suele recibir
+// información distinta, así que conviene poder separarlas al enviar.
+function filtrarPonentes(ponentes: PonenteDatos[], estado: EstadoPonente, modalidad: ModalidadPonente): Persona[] {
+  return ponentes
+    .filter((p) => (estado === "TODOS" || p.status === estado) && (modalidad === "TODAS" || p.modalidad === modalidad))
+    .map(({ correo, nombre }) => ({ correo, nombre }));
+}
 
 // Botón + modal de confirmación PROPIOS (no window.confirm — ese lo dibuja el
 // navegador donde quiere y no se puede centrar ni estilar). Vive DENTRO del
@@ -100,6 +121,7 @@ export default function AnuncioForm({
   const [asistentesOn, setAsistentesOn] = useState(true);
   const [ponentesOn, setPonentesOn] = useState(true);
   const [estadoPonentes, setEstadoPonentes] = useState<EstadoPonente>("TODOS");
+  const [modalidadPonentes, setModalidadPonentes] = useState<ModalidadPonente>("TODAS");
   const [lista, setLista] = useState<Persona[]>([]);
   const [nuevoCorreo, setNuevoCorreo] = useState("");
   const [nuevoNombre, setNuevoNombre] = useState("");
@@ -120,10 +142,10 @@ export default function AnuncioForm({
     }
     let base: Persona[] = [];
     if (asistentesOn) base = base.concat(evento.asistentes);
-    if (ponentesOn) base = base.concat(evento.ponentes[estadoPonentes]);
+    if (ponentesOn) base = base.concat(filtrarPonentes(evento.ponentes, estadoPonentes, modalidadPonentes));
     setLista(dedupe(base));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [eventId, asistentesOn, ponentesOn, estadoPonentes]);
+  }, [eventId, asistentesOn, ponentesOn, estadoPonentes, modalidadPonentes]);
 
   const quitar = (correo: string) => setLista((l) => l.filter((p) => p.correo !== correo));
 
@@ -186,23 +208,52 @@ export default function AnuncioForm({
             checked={ponentesOn}
             onChange={(e) => setPonentesOn(e.target.checked)}
           />
-          Conferencistas, talleristas y expositores ({evento?.ponentes[estadoPonentes].length ?? 0})
+          Conferencistas, talleristas y expositores (
+          {evento ? filtrarPonentes(evento.ponentes, estadoPonentes, modalidadPonentes).length : 0})
         </label>
 
         {ponentesOn && (
-          <label style={{ fontSize: 13, marginLeft: 26, opacity: 0.85 }}>
-            Estado:{" "}
-            <select
-              value={estadoPonentes}
-              onChange={(e) => setEstadoPonentes(e.target.value as EstadoPonente)}
-              style={{ padding: 3 }}
-            >
-              <option value="TODOS">Todos ({evento?.ponentes.TODOS.length ?? 0})</option>
-              <option value="ACEPTADA">Solo aceptados ({evento?.ponentes.ACEPTADA.length ?? 0})</option>
-              <option value="PENDIENTE">Solo pendientes ({evento?.ponentes.PENDIENTE.length ?? 0})</option>
-              <option value="RECHAZADA">Solo rechazados ({evento?.ponentes.RECHAZADA.length ?? 0})</option>
-            </select>
-          </label>
+          <div style={{ marginLeft: 26, display: "flex", gap: 16, flexWrap: "wrap" }}>
+            <label style={{ fontSize: 13, opacity: 0.85 }}>
+              Modalidad:{" "}
+              <select
+                value={modalidadPonentes}
+                onChange={(e) => setModalidadPonentes(e.target.value as ModalidadPonente)}
+                style={{ padding: 3 }}
+              >
+                <option value="TODAS">
+                  Todas ({evento ? filtrarPonentes(evento.ponentes, estadoPonentes, "TODAS").length : 0})
+                </option>
+                {(Object.keys(ETIQUETA_MODALIDAD) as (keyof typeof ETIQUETA_MODALIDAD)[]).map((m) => (
+                  <option key={m} value={m}>
+                    {ETIQUETA_MODALIDAD[m]} ({evento ? filtrarPonentes(evento.ponentes, estadoPonentes, m).length : 0})
+                  </option>
+                ))}
+              </select>
+            </label>
+
+            <label style={{ fontSize: 13, opacity: 0.85 }}>
+              Estado:{" "}
+              <select
+                value={estadoPonentes}
+                onChange={(e) => setEstadoPonentes(e.target.value as EstadoPonente)}
+                style={{ padding: 3 }}
+              >
+                <option value="TODOS">
+                  Todos ({evento ? filtrarPonentes(evento.ponentes, "TODOS", modalidadPonentes).length : 0})
+                </option>
+                <option value="ACEPTADA">
+                  Solo aceptados ({evento ? filtrarPonentes(evento.ponentes, "ACEPTADA", modalidadPonentes).length : 0})
+                </option>
+                <option value="PENDIENTE">
+                  Solo pendientes ({evento ? filtrarPonentes(evento.ponentes, "PENDIENTE", modalidadPonentes).length : 0})
+                </option>
+                <option value="RECHAZADA">
+                  Solo rechazados ({evento ? filtrarPonentes(evento.ponentes, "RECHAZADA", modalidadPonentes).length : 0})
+                </option>
+              </select>
+            </label>
+          </div>
         )}
       </div>
 

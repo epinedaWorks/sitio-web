@@ -30,27 +30,25 @@ export default async function AnunciosPage({
   });
   const [asistentes, ponentes] = await Promise.all([
     prisma.attendeeRegistration.findMany({ select: { eventId: true, correo: true, nombre: true } }),
-    prisma.speakerSubmission.findMany({ select: { eventId: true, correo: true, nombre: true, status: true } }),
+    prisma.speakerSubmission.findMany({
+      select: { eventId: true, correo: true, nombre: true, status: true, modalidad: true },
+    }),
   ]);
 
-  const datos = eventos.map((e) => {
-    const asis = asistentes.filter((a) => a.eventId === e.id).map(({ correo, nombre }) => ({ correo, nombre }));
-    const ponE = ponentes.filter((p) => p.eventId === e.id);
-    const porEstado = (st?: "PENDIENTE" | "ACEPTADA" | "RECHAZADA") =>
-      ponE.filter((p) => !st || p.status === st).map(({ correo, nombre }) => ({ correo, nombre }));
-    return {
-      id: e.id,
-      title: e.title,
-      slug: e.slug,
-      asistentes: asis,
-      ponentes: {
-        TODOS: porEstado(),
-        PENDIENTE: porEstado("PENDIENTE"),
-        ACEPTADA: porEstado("ACEPTADA"),
-        RECHAZADA: porEstado("RECHAZADA"),
-      },
-    };
-  });
+  // Cada ponente lleva su estado y su modalidad: el formulario filtra por las
+  // dos a la vez (por ejemplo "solo talleristas aceptados"), porque cada
+  // modalidad recibe información distinta.
+  const datos = eventos.map((e) => ({
+    id: e.id,
+    title: e.title,
+    slug: e.slug,
+    asistentes: asistentes
+      .filter((a) => a.eventId === e.id)
+      .map(({ correo, nombre }) => ({ correo, nombre })),
+    ponentes: ponentes
+      .filter((p) => p.eventId === e.id)
+      .map(({ correo, nombre, status, modalidad }) => ({ correo, nombre, status, modalidad })),
+  }));
 
   const aviso = searchParams?.msg ? MENSAJES[searchParams.msg] : null;
 
@@ -65,9 +63,11 @@ export default async function AnunciosPage({
       <h1>Anuncios</h1>
       <p style={{ opacity: 0.75, fontSize: 14 }}>
         Manda un correo a los asistentes inscritos y/o a los conferencistas, talleristas y expositores de
-        un evento. Puedes revisar la lista de correos y quitar o agregar alguno antes de enviar. El asunto
-        y el mensaje se mandan exactamente como los escribas, sin nada agregado. Cada quien recibe su propio
-        correo — nadie ve la lista de los demás.
+        un evento — a estos últimos puedes filtrarlos por modalidad (charla, taller o proyecto) y por
+        estado, ya que cada modalidad suele recibir información distinta. Puedes revisar la lista de
+        correos y quitar o agregar alguno antes de enviar. El asunto y el mensaje se mandan exactamente
+        como los escribas, sin nada agregado. Cada quien recibe su propio correo — nadie ve la lista de
+        los demás.
       </p>
 
       {aviso && (

@@ -1,9 +1,10 @@
 import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
-import { actualizarEstadoPonente, actualizarModalidadPonente, eliminarPonente } from "../actions";
+import { actualizarEstadoPonente, actualizarModalidadPonente, actualizarContactadoPonente, eliminarPonente } from "../actions";
 import ConfirmDelete from "../ConfirmDelete";
 import EstadoPonenteBotones from "../EstadoPonenteBotones";
 import ModalidadSelector from "../ModalidadSelector";
+import ContactadoToggle from "../ContactadoToggle";
 import { fechaHora } from "@/lib/fecha";
 
 export default async function PonentesAdminPage() {
@@ -72,6 +73,20 @@ export default async function PonentesAdminPage() {
               >
                 {s.status}
               </span>
+              {s.contactado && (
+                <span
+                  style={{
+                    fontSize: 12,
+                    marginLeft: 6,
+                    padding: "2px 8px",
+                    borderRadius: 999,
+                    color: "#0a4a7a",
+                    background: "#dcedfa",
+                  }}
+                >
+                  Contactado
+                </span>
+              )}
             </summary>
 
             <dl style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: "4px 12px", margin: "12px 0", fontSize: 14 }}>
@@ -101,6 +116,7 @@ export default async function PonentesAdminPage() {
             <div style={{ display: "grid", gap: 8 }}>
               <EstadoPonenteBotones id={s.id} estado={s.status} actualizar={actualizarEstadoPonente} />
               <ModalidadSelector id={s.id} modalidad={s.modalidad} actualizar={actualizarModalidadPonente} />
+              <ContactadoToggle id={s.id} contactado={s.contactado} actualizar={actualizarContactadoPonente} />
             </div>
           </details>
 

@@ -109,6 +109,7 @@ model SpeakerSubmission {
   necesidades  String?           // solo TALLER/PROYECTO: regletas, mesas, más espacio, etc.
   compartirDatos Boolean         @default(false) // autoriza compartir contacto con empresas aliadas
   status       SubmissionStatus  @default(PENDIENTE)
+  contactado   Boolean           @default(false) // ¿el equipo ya le escribió sobre su propuesta?
   createdAt    DateTime          @default(now())
 
   event   Event  @relation(fields: [eventId], references: [id])

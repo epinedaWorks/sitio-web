@@ -259,6 +259,16 @@ export async function actualizarModalidadPonente(
   revalidatePath("/admin/dashboard/ponentes");
 }
 
+// Marca si ya se le escribió a la persona sobre su propuesta.
+export async function actualizarContactadoPonente(submissionId: string, contactado: boolean) {
+  await requireAdminSession();
+  await prisma.speakerSubmission.update({
+    where: { id: submissionId },
+    data: { contactado },
+  });
+  revalidatePath("/admin/dashboard/ponentes");
+}
+
 // ---- Cupos de los formularios públicos (solo ADMIN) ----
 export async function guardarCupos(formData: FormData) {
   await requireAdminRole();

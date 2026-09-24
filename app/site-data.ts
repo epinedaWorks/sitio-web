@@ -88,7 +88,7 @@ export const SPONSOR_TIERS: {
   {
     nivel: 1,
     nombre: "Aliado Emprendedor",
-    precio: "Q300",
+    precio: "Q500",
     para: "Ideal para empresas que desean presencia de marca y visibilidad digital en el evento.",
     incluye: [
       "Logo en piezas promocionales digitales (redes sociales, afiches y materiales del evento).",
@@ -99,7 +99,7 @@ export const SPONSOR_TIERS: {
   {
     nivel: 2,
     nombre: "Aliado Estratégico",
-    precio: "Q600",
+    precio: "Q1000",
     para: "Para empresas que buscan un rol más activo y visibilidad ampliada durante el evento.",
     incluye: [
       "Todo lo del nivel anterior.",
@@ -111,7 +111,7 @@ export const SPONSOR_TIERS: {
   {
     nivel: 3,
     nombre: "Aliado Premium",
-    precio: "Q1200",
+    precio: "Q2000",
     destacado: true,
     para: "Para empresas que buscan el rol más activo y la mayor visibilidad durante y después del evento.",
     incluye: [

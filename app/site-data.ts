@@ -131,6 +131,7 @@ export const SPONSOR_TIERS: {
 export const NAV_LINKS: { href: string; label: string; contacto?: boolean }[] = [
   { href: "/#comunidad", label: "Comunidad" },
   { href: "/#eventos", label: "Eventos" },
+  { href: "/agenda", label: "Agenda" },
   { href: "/#apoyanos", label: "Apóyanos" },
   { href: "/#equipo", label: "Equipo" },
   { href: "/#conducta", label: "Código de conducta" },

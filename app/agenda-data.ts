@@ -17,7 +17,7 @@ export type Sesion = {
 export type Sala = { id: string; nombre: string; aforo: string; sesiones: Sesion[] };
 
 // Momentos en los que todo el evento va junto (una sola fila para todas las salas).
-export type Bloque = { inicio: string; fin: string; tipo: Tipo; titulo: string; nota?: string };
+export type Bloque = { inicio: string; fin: string; tipo: Tipo; titulo: string; nota?: string; soloSalones?: boolean };
 
 export const SALAS_INFO = [
   { id: "auditorio", nombre: "Auditorio", aforo: "150 personas" },
@@ -44,7 +44,7 @@ export const MATUTINA: Sala[] = [
     ...SALAS_INFO[0],
     sesiones: [
       { inicio: "09:00", fin: "09:30", tipo: "charla", titulo: "PyCon US 2026 ReCap: Mi primera experiencia en una PyCon", ponente: "Samuel Palacios", nivel: "Básico" },
-      { inicio: "09:45", fin: "10:15", tipo: "charla", titulo: "El nuevo perfil profesional: Python, datos e Inteligencia Artificial", ponente: "Luciano Tom", nivel: "Avanzado" },
+      { inicio: "09:45", fin: "10:15", tipo: "pendiente", titulo: "Pendiente confirmar" },
       { inicio: "10:20", fin: "10:40", tipo: "receso", titulo: "Coffee Break" },
       { inicio: "10:40", fin: "11:10", tipo: "charla", titulo: "Del prompt a producción: Python detrás de agentes de IA", ponente: "José Figueroa", nivel: "Intermedio" },
       { inicio: "11:25", fin: "11:55", tipo: "charla", titulo: "Algoritmos cuánticos en Python aplicados a criptografía de curvas elípticas", ponente: "Ariel Montejo", nivel: "Avanzado" },
@@ -56,7 +56,7 @@ export const MATUTINA: Sala[] = [
     sesiones: [
       { inicio: "09:00", fin: "09:30", tipo: "charla", titulo: "Risk Model & Reinforcement Learning", ponente: "Samuel Ramos", nivel: "Intermedio" },
       { inicio: "09:45", fin: "10:15", tipo: "charla", titulo: "Explorando Python en la educación", ponente: "Antonio García", nivel: "Intermedio" },
-      { inicio: "10:20", fin: "10:40", tipo: "receso", titulo: "Coffee Break", nota: "Conexión del Taller 1" },
+      { inicio: "10:20", fin: "10:40", tipo: "receso", titulo: "Coffee Break" },
       { inicio: "10:40", fin: "12:20", tipo: "taller", titulo: "Eleva tu carrera en datos con Databricks", ponente: "Christian Serrano", nivel: "Intermedio" },
     ],
   },
@@ -65,15 +65,15 @@ export const MATUTINA: Sala[] = [
     sesiones: [
       { inicio: "09:00", fin: "09:30", tipo: "charla", titulo: "Más allá del código: la importancia del networking en tecnología", ponente: "Rudy Reinoso", nivel: "Básico" },
       { inicio: "09:45", fin: "10:15", tipo: "charla", titulo: "Cómo conseguir oportunidades internacionales en Big Data e IA", ponente: "Mario Gómez", nivel: "Básico" },
-      { inicio: "10:20", fin: "10:40", tipo: "receso", titulo: "Coffee Break", nota: "Conexión del Taller 2" },
+      { inicio: "10:20", fin: "10:40", tipo: "receso", titulo: "Coffee Break" },
       { inicio: "10:40", fin: "12:20", tipo: "taller", titulo: "IA con visión de negocio para tu carrera tech", ponente: "Mar García", nivel: "Básico" },
     ],
   },
   {
     ...SALAS_INFO[3],
     sesiones: [
-      { inicio: "09:00", fin: "09:30", tipo: "pendiente", titulo: "Por confirmar" },
-      { inicio: "09:35", fin: "10:20", tipo: "logistica", titulo: "Montaje de la exposición" },
+      { inicio: "09:00", fin: "09:45", tipo: "charla", titulo: "El nuevo perfil profesional: Python, datos e Inteligencia Artificial", ponente: "Luciano Tom", nivel: "Avanzado" },
+      { inicio: "09:45", fin: "10:20", tipo: "logistica", titulo: "Montaje de la exposición" },
       { inicio: "10:20", fin: "12:20", tipo: "expo", titulo: "Exposición de proyectos", nota: "El coffee break se sirve aquí de 10:20 a 10:40." },
       { inicio: "12:20", fin: "12:45", tipo: "logistica", titulo: "Desmontaje de la exposición" },
     ],
@@ -91,7 +91,8 @@ export const VESPERTINA: Sala[] = [
     sesiones: [
       { inicio: "14:00", fin: "14:30", tipo: "charla", titulo: "Desarrollo de SLM en Kaqchikel", ponente: "Cristian Lavarreda", nivel: "Intermedio" },
       { inicio: "14:40", fin: "15:10", tipo: "charla", titulo: "IA aplicada a la automatización en procesos empresariales", ponente: "Mitsa Marisol Castellanos Pineda", nivel: "Intermedio" },
-      { inicio: "15:20", fin: "15:50", tipo: "pendiente", titulo: "Por confirmar" },
+      { inicio: "15:20", fin: "15:50", tipo: "pendiente", titulo: "Pendiente confirmar" },
+      { inicio: "15:55", fin: "16:00", tipo: "logistica", titulo: "Preparación del cierre" },
     ],
   },
   {
@@ -115,15 +116,15 @@ export const VESPERTINA: Sala[] = [
 ];
 
 export const CIERRE: Bloque[] = [
-  { inicio: "15:50", fin: "16:00", tipo: "logistica", titulo: "Traslado al auditorio" },
+  { inicio: "15:50", fin: "16:00", tipo: "logistica", titulo: "Traslado al auditorio", soloSalones: true },
   { inicio: "16:00", fin: "16:30", tipo: "logistica", titulo: "Despedida, reconocimientos y foto grupal" },
 ];
 
 export const TOTALES = "13 charlas, 5 talleres y 1 exposición de proyectos";
 
 export const LEYENDA: { tipo: Tipo; texto: string }[] = [
-  { tipo: "charla", texto: "Charla (30 min)" },
-  { tipo: "taller", texto: "Taller (100 min de práctica)" },
+  { tipo: "charla", texto: "Charla" },
+  { tipo: "taller", texto: "Taller" },
   { tipo: "expo", texto: "Exposición de proyectos" },
   { tipo: "receso", texto: "Coffee break / almuerzo" },
   { tipo: "logistica", texto: "Logística" },

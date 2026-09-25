@@ -91,7 +91,7 @@ export const VESPERTINA: Sala[] = [
     sesiones: [
       { inicio: "14:00", fin: "14:30", tipo: "charla", titulo: "Desarrollo de SLM en Kaqchikel", ponente: "Cristian Lavarreda", nivel: "Intermedio" },
       { inicio: "14:40", fin: "15:10", tipo: "charla", titulo: "IA aplicada a la automatización en procesos empresariales", ponente: "Mitsa Marisol Castellanos Pineda", nivel: "Intermedio" },
-      { inicio: "15:20", fin: "15:50", tipo: "pendiente", titulo: "Pendiente confirmar" },
+      { inicio: "15:20", fin: "15:50", tipo: "charla", titulo: "C++ vs MicroPython", ponente: "Mario Esaú Pojoy Corzo", nivel: "Intermedio" },
       { inicio: "15:55", fin: "16:00", tipo: "logistica", titulo: "Preparación del cierre" },
     ],
   },

@@ -13,6 +13,10 @@ import {
   type Tipo,
 } from "../../agenda-data";
 import FiltroTipo from "./FiltroTipo";
+import AvisoFiltros from "./AvisoFiltros";
+import VistaSwitch from "./VistaSwitch";
+import AgendaMovil from "../agendamovil/AgendaMovil";
+import { css as cssMovil } from "../../agenda-movil-css";
 import { min, COLOR, FONDO, construirCeldas, hh, type Celda } from "../../agenda-celdas";
 
 export const metadata: Metadata = {
@@ -31,6 +35,8 @@ const css = `
 .ag-legend{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:22px;font-size:.85rem;color:var(--soft)}
 .ag-legend span{display:inline-flex;align-items:center;gap:7px}
 .ag-dot{width:10px;height:10px;border-radius:3px;display:inline-block}
+.ag-mov{display:none;max-width:620px;margin:0 auto}
+@media (max-width:1099px){html:not(.ag-fuerza-pc) .ag-desk{display:none}html:not(.ag-fuerza-pc) .ag-mov{display:block}}
 .ag-scroll{margin-top:6px;overflow-x:auto;padding-bottom:8px}
 @media (min-width:1100px){.ag-scroll{overflow:visible}}
 .ag-grid{display:grid;grid-template-columns:104px repeat(4,minmax(215px,1fr));gap:0 8px;min-width:1020px}
@@ -86,7 +92,7 @@ export default function AgendaPage() {
 
   return (
     <main>
-      <style dangerouslySetInnerHTML={{ __html: css }} />
+      <style dangerouslySetInnerHTML={{ __html: css + cssMovil }} />
       <section className="section-pad" style={{ paddingTop: 140 }}>
         <div className="container">
           <div className="section-head reveal">
@@ -108,8 +114,11 @@ export default function AgendaPage() {
                 </span>
               ))}
             </div>
+            <VistaSwitch en="auto" />
           </div>
 
+          <div className="ag-desk">
+          <AvisoFiltros texto="Usa estos botones para ver solo las charlas, solo los talleres o ambas." />
           <FiltroTipo />
           <div className="ag-scroll">
             <div
@@ -200,6 +209,13 @@ export default function AgendaPage() {
                 );
               })}
             </div>
+          </div>
+
+          </div>
+
+          {/* En pantallas angostas (celular, tableta) se muestra esta lista en lugar de la tabla */}
+          <div className="ag-mov">
+            <AgendaMovil salas={SALAS_INFO.map(({ id, nombre, aforo }) => ({ id, nombre, aforo }))} celdas={celdas} />
           </div>
 
           <p style={{ marginTop: 44 }}>

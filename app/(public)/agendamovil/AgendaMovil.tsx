@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import AvisoFiltros from "../agenda/AvisoFiltros";
 import { COLOR, FONDO, hh, type Celda } from "../../agenda-celdas";
 
 type Sala = { id: string; nombre: string; aforo: string };
@@ -42,6 +43,7 @@ export default function AgendaMovil({ salas, celdas }: { salas: Sala[]; celdas: 
 
   return (
     <>
+      <AvisoFiltros texto="Elige un salón, o mira solo las charlas o los talleres de todo el día." />
       <div className="am-barra">
         <div className="am-vista" role="group" aria-label="Ver por">
           {(

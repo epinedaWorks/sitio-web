@@ -44,7 +44,7 @@ export const MATUTINA: Sala[] = [
     ...SALAS_INFO[0],
     sesiones: [
       { inicio: "09:00", fin: "09:30", tipo: "charla", titulo: "PyCon US 2026 ReCap: Mi primera experiencia en una PyCon", ponente: "Samuel Palacios", nivel: "Básico" },
-      { inicio: "09:45", fin: "10:15", tipo: "pendiente", titulo: "Pendiente confirmar" },
+      { inicio: "09:45", fin: "10:15", tipo: "charla", titulo: "Python para problemas que nadie te enseñó a programar", ponente: "Nancy Valdés", nivel: "Intermedio" },
       { inicio: "10:20", fin: "10:40", tipo: "receso", titulo: "Coffee Break" },
       { inicio: "10:40", fin: "11:10", tipo: "charla", titulo: "Del prompt a producción: Python detrás de agentes de IA", ponente: "José Figueroa", nivel: "Intermedio" },
       { inicio: "11:25", fin: "11:55", tipo: "charla", titulo: "Algoritmos cuánticos en Python aplicados a criptografía de curvas elípticas", ponente: "Ariel Montejo", nivel: "Avanzado" },

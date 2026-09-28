@@ -397,6 +397,12 @@ export async function eliminarPonente(id: string) {
   revalidatePath("/admin/dashboard/ponentes");
 }
 
+export async function eliminarVoluntario(id: string) {
+  await requireEditorSession();
+  await prisma.volunteerApplication.delete({ where: { id } });
+  revalidatePath("/admin/dashboard/voluntarios");
+}
+
 // ---- Anuncios masivos (solo ADMIN): un mensaje a asistentes y/o ponentes ----
 // de un evento. El asunto que se escribe es EXACTAMENTE el que se envía —
 // sin marcas ni modificaciones automáticas, sin importar cuánta gente haya

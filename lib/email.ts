@@ -263,6 +263,70 @@ export async function sendSpeakerEmails(d: DatosPonente) {
   }
 }
 
+// ---------- Postulación de voluntario(a) ----------
+export type DatosVoluntario = {
+  nombre: string;
+  correo: string;
+  telefono?: string | null;
+  disponibilidad?: string | null;
+  universidad?: string | null;
+  carnet?: string | null;
+  semestre?: string | null;
+  edad?: string | null;
+  areas?: string[];
+  comentarios?: string | null;
+  eventoTitulo: string;
+};
+
+export async function sendVolunteerEmails(d: DatosVoluntario) {
+  const TEAM_LIST = await getCorreosEquipo();
+  const areasTexto = d.areas && d.areas.length ? d.areas.join(", ") : null;
+
+  await enviar({
+    to: d.correo,
+    subject: `Postulación de voluntariado recibida · ${d.eventoTitulo}`,
+    html: layout(
+      `¡Gracias por querer ser voluntario(a), ${esc(d.nombre.split(" ")[0])}!`,
+      `<p style="font-size:14px;line-height:1.6">Recibimos tu postulación para ser voluntario(a) en el <strong>${esc(
+        d.eventoTitulo
+      )}</strong>. El equipo core la revisará y te escribirá a este correo con los detalles.</p>
+       <p style="font-size:13px;color:#666;margin-top:16px">Resumen de lo que enviaste:</p>
+       ${filas([
+         ["Disponibilidad", d.disponibilidad],
+         ["Universidad", d.universidad],
+         ["Áreas de interés", areasTexto],
+       ])}`
+    ),
+    replyTo: TEAM_LIST[0],
+    bcc: TEAM_LIST,
+  });
+
+  if (TEAM_LIST.length) {
+    await enviar({
+      to: TEAM_LIST,
+      subject: `Nueva postulación de voluntario(a): ${d.nombre} · ${d.eventoTitulo}`,
+      html: layout(
+        "Nueva postulación de voluntario(a)",
+        `${filas([
+          ["Nombre", d.nombre],
+          ["Correo", d.correo],
+          ["Teléfono", d.telefono],
+          ["Disponibilidad", d.disponibilidad],
+          ["Universidad", d.universidad],
+          ["Carné", d.carnet],
+          ["Semestre", d.semestre],
+          ["Edad", d.edad],
+          ["Áreas de interés", areasTexto],
+          ["Comentarios", d.comentarios],
+          ["Evento", d.eventoTitulo],
+        ])}
+        <p style="margin-top:16px"><a href="${ADMIN_URL}/voluntarios" style="color:#159d68">Ver en el panel →</a></p>`
+      ),
+      replyTo: d.correo,
+    });
+  }
+}
+
 // ---------- Formulario de contacto ----------
 export type DatosContacto = {
   nombre: string;

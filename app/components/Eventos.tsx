@@ -70,6 +70,9 @@ export default function Eventos({ albums }: { albums: Album[] }) {
               <a className="btn btn-primary js-ponente" href="#eventos">
                 Ser conferencista, tallerista o expositor
               </a>
+              <a className="btn btn-primary js-voluntario" href="#eventos">
+                Ser voluntario(a)
+              </a>
             </div>
 
             <div className="xp-tracks-head">

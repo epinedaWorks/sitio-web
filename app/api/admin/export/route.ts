@@ -13,7 +13,7 @@ export async function GET(req: Request) {
   const tipo = url.searchParams.get("tipo");
   const formato = url.searchParams.get("formato") === "csv" ? "csv" : "xlsx";
 
-  if (tipo !== "inscritos" && tipo !== "ponentes" && tipo !== "contacto") {
+  if (tipo !== "inscritos" && tipo !== "ponentes" && tipo !== "contacto" && tipo !== "voluntarios") {
     return new Response("Parámetro 'tipo' inválido", { status: 400 });
   }
 
@@ -49,6 +49,22 @@ export async function GET(req: Request) {
     rows = data.map((m) => [
       m.nombre, m.correo, m.organizacion, m.asunto, m.mensaje,
       m.atendido ? "Sí" : "No", fmt(m.createdAt),
+    ]);
+  } else if (tipo === "voluntarios") {
+    const data = await prisma.volunteerApplication.findMany({
+      orderBy: { createdAt: "desc" },
+      include: { event: true },
+    });
+    headers = [
+      "Nombre", "Correo", "Teléfono", "Disponibilidad", "Universidad", "Carné", "Semestre",
+      "Rango de edad", "Áreas de interés", "Comentarios", "Evento", "Fecha de postulación",
+    ];
+    rows = data.map((v) => [
+      v.nombre, v.correo, v.telefono, v.disponibilidad,
+      // "Universidad" nunca debe quedar vacía en el Excel.
+      v.universidad || "No aplica",
+      v.carnet, v.semestre, v.edad, v.areas.join(", "), v.comentarios,
+      v.event.title, fmt(v.createdAt),
     ]);
   } else {
     const data = await prisma.speakerSubmission.findMany({
@@ -100,7 +116,9 @@ export async function GET(req: Request) {
   wb.creator = "Python Guatemala";
   wb.created = new Date();
   const hoja =
-    tipo === "inscritos" ? "Inscritos" : tipo === "contacto" ? "Contacto" : "Ponentes";
+    tipo === "inscritos" ? "Inscritos" :
+    tipo === "contacto" ? "Contacto" :
+    tipo === "voluntarios" ? "Voluntarios" : "Ponentes";
   const ws = wb.addWorksheet(hoja, { views: [{ state: "frozen", ySplit: 1 }] });
 
   ws.addRow(headers);

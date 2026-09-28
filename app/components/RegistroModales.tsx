@@ -5,14 +5,17 @@ import { usePathname } from "next/navigation";
 import { EVENT_SLUG } from "../site-data";
 import type { Cupos } from "@/lib/settings";
 
-type Modo = null | "inscripcion" | "ponente" | "contacto";
+type Modo = null | "inscripcion" | "ponente" | "voluntario" | "contacto";
 type Estado = "idle" | "enviando" | "ok";
+
+const AREAS_VOLUNTARIO = ["Fotografía", "Orden", "Recepción", "Conteo de tiempo", "Moderador", "Cualquier área"] as const;
 
 // URLs cortas para compartir: cada una abre su formulario al cargar.
 const RUTA_A_MODO: Record<string, Exclude<Modo, null>> = {
   "/inscripcion": "inscripcion",
   "/conferencistas": "ponente",
   "/ponentes": "ponente",
+  "/voluntarios": "voluntario",
   "/contacto": "contacto",
 };
 
@@ -24,6 +27,7 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
   const [error, setError] = useState("");
   const [rolAsistente, setRolAsistente] = useState("");
   const [modalidadPonente, setModalidadPonente] = useState("");
+  const [universidadVoluntario, setUniversidadVoluntario] = useState("No aplica");
   const [toast, setToast] = useState<{ msg: string; err?: boolean } | null>(null);
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -32,6 +36,7 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
     setError("");
     setRolAsistente("");
     setModalidadPonente("");
+    setUniversidadVoluntario("No aplica");
     setModo(m);
   }, []);
 
@@ -64,6 +69,7 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
     const grupos: [string, Exclude<Modo, null>][] = [
       [".js-inscribir", "inscripcion"],
       [".js-ponente", "ponente"],
+      [".js-voluntario", "voluntario"],
       [".js-contacto", "contacto"],
     ];
     const limpiar: (() => void)[] = [];
@@ -182,6 +188,43 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
     }
   }
 
+  async function enviarVoluntario(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setEstado("enviando");
+    setError("");
+    const f = new FormData(e.currentTarget);
+    try {
+      const res = await fetch("/api/voluntarios", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          nombre_web: f.get("nombre_web"),
+          nombre: f.get("nombre"),
+          correo: f.get("correo"),
+          telefono: f.get("telefono"),
+          disponibilidad: f.get("disponibilidad"),
+          universidad: f.get("universidad"),
+          carnet: f.get("carnet"),
+          semestre: f.get("semestre"),
+          edad: f.get("edad"),
+          areas: f.getAll("areas"),
+          comentarios: f.get("comentarios"),
+          eventSlug: EVENT_SLUG,
+        }),
+      });
+      if (res.ok) {
+        setEstado("ok");
+      } else {
+        const data = await res.json().catch(() => ({}));
+        setError(data.error || "No se pudo enviar la postulación.");
+        setEstado("idle");
+      }
+    } catch {
+      setError("Sin conexión. Intenta de nuevo.");
+      setEstado("idle");
+    }
+  }
+
   async function enviarContacto(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setEstado("enviando");
@@ -220,7 +263,9 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
           ? "¡Inscripción confirmada! Te esperamos en el Python eXposition Day 2026."
           : modo === "ponente"
             ? "¡Propuesta recibida! El equipo core te escribirá pronto."
-            : "¡Mensaje enviado! Te responderemos a tu correo."
+            : modo === "voluntario"
+              ? "¡Postulación recibida! El equipo core te escribirá pronto."
+              : "¡Mensaje enviado! Te responderemos a tu correo."
       );
     }
     cerrar();
@@ -239,14 +284,18 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
                     ? "¡Listo, quedaste inscrito!"
                     : modo === "ponente"
                       ? "¡Gracias por postularte!"
-                      : "¡Mensaje enviado!"}
+                      : modo === "voluntario"
+                        ? "¡Gracias por querer ayudar!"
+                        : "¡Mensaje enviado!"}
                 </h3>
                 <p>
                   {modo === "inscripcion"
                     ? "Te esperamos el sábado 3 de octubre de 2026 en la UVG."
                     : modo === "ponente"
                       ? "El equipo core revisará tu propuesta y te escribirá a tu correo."
-                      : "Recibimos tu mensaje. Te responderemos a tu correo lo antes posible."}
+                      : modo === "voluntario"
+                        ? "El equipo core revisará tu postulación y te escribirá a tu correo con los detalles."
+                        : "Recibimos tu mensaje. Te responderemos a tu correo lo antes posible."}
                 </p>
                 <button className="btn btn-primary" onClick={cerrarConToast}>
                   Cerrar
@@ -279,14 +328,18 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
                         ? "Inscríbete al Python eXposition Day 2026"
                         : modo === "ponente"
                           ? "Sé parte del Python eXposition Day 2026"
-                          : "Contáctanos"}
+                          : modo === "voluntario"
+                            ? "Sé voluntario(a) del Python eXposition Day 2026"
+                            : "Contáctanos"}
                     </h3>
                     <p>
                       {modo === "inscripcion"
                         ? "Entrada gratuita · cupo limitado · sábado 3 de octubre · UVG"
                         : modo === "ponente"
                           ? "Charla, taller o exposición de proyecto. Cuéntanos tu idea."
-                          : "¿Quieres patrocinar, colaborar o pedir más información? Escríbenos."}
+                          : modo === "voluntario"
+                            ? "Ayúdanos el día del evento. Cuéntanos tu disponibilidad y en qué te gustaría apoyar."
+                            : "¿Quieres patrocinar, colaborar o pedir más información? Escríbenos."}
                     </p>
                   </div>
                   <button className="modal-close" aria-label="Cerrar" onClick={cerrarConToast}>
@@ -646,6 +699,117 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
                         propuesta.
                       </span>
                     </label>
+
+                    {error && <p className="form-error">{error}</p>}
+                    <div className="form-actions">
+                      <button className="btn btn-primary" type="submit" disabled={estado === "enviando"}>
+                        {estado === "enviando" ? "Enviando…" : "Enviar postulación"}
+                      </button>
+                    </div>
+                  </form>
+                ) : modo === "voluntario" ? (
+                  <form className="form-grid" onSubmit={enviarVoluntario}>
+                    <input
+                      type="text"
+                      name="nombre_web"
+                      tabIndex={-1}
+                      autoComplete="off"
+                      aria-hidden="true"
+                      style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
+                    />
+                    <div className="form-field">
+                      <label htmlFor="v-nombre">Nombre completo *</label>
+                      <input id="v-nombre" name="nombre" required autoFocus />
+                    </div>
+                    <div className="form-row">
+                      <div className="form-field">
+                        <label htmlFor="v-correo">Correo *</label>
+                        <input id="v-correo" name="correo" type="email" required />
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="v-tel">Teléfono / WhatsApp</label>
+                        <input id="v-tel" name="telefono" type="tel" placeholder="Opcional" />
+                      </div>
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="v-disp">Disponibilidad *</label>
+                      <select id="v-disp" name="disponibilidad" required defaultValue="">
+                        <option value="" disabled>
+                          Elige una opción
+                        </option>
+                        <option value="Mañana">Solo en la mañana</option>
+                        <option value="Todo el día">Todo el día</option>
+                        <option value="Tarde">Solo la tarde</option>
+                      </select>
+                    </div>
+
+                    <div className="form-row">
+                      <div className="form-field">
+                        <label htmlFor="v-uni">¿De qué universidad?</label>
+                        <select
+                          id="v-uni"
+                          name="universidad"
+                          defaultValue="No aplica"
+                          onChange={(e) => setUniversidadVoluntario(e.target.value)}
+                        >
+                          <option value="No aplica">No aplica</option>
+                          <option value="Universidad del Valle de Guatemala (UVG)">Universidad del Valle (UVG)</option>
+                          <option value="Universidad de San Carlos (USAC)">Universidad de San Carlos (USAC)</option>
+                          <option value="Universidad Galileo">Universidad Galileo</option>
+                          <option value="Universidad Mariano Gálvez (UMG)">Universidad Mariano Gálvez (UMG)</option>
+                          <option value="Universidad Francisco Marroquín (UFM)">Universidad Francisco Marroquín (UFM)</option>
+                          <option value="Universidad Panamericana (UPANA)">Universidad Panamericana (UPANA)</option>
+                          <option value="Otra">Otra</option>
+                        </select>
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="v-edad">Rango de edad</label>
+                        <select id="v-edad" name="edad" defaultValue="">
+                          <option value="">Prefiero no decir</option>
+                          <option value="Menos de 18">Menos de 18</option>
+                          <option value="18 - 24">18 – 24</option>
+                          <option value="25 - 34">25 – 34</option>
+                          <option value="35 - 44">35 – 44</option>
+                          <option value="45 - 54">45 – 54</option>
+                          <option value="55 o más">55 o más</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {universidadVoluntario === "Universidad del Valle de Guatemala (UVG)" && (
+                      <div className="form-row">
+                        <div className="form-field">
+                          <label htmlFor="v-carnet">Carné de la UVG</label>
+                          <input id="v-carnet" name="carnet" placeholder="Opcional" />
+                        </div>
+                        <div className="form-field">
+                          <label htmlFor="v-sem">¿Qué semestre?</label>
+                          <select id="v-sem" name="semestre" defaultValue="">
+                            <option value="">Elige…</option>
+                            <option value="1 - 3 semestre">1 – 3 semestre</option>
+                            <option value="3 - 6 semestre">3 – 6 semestre</option>
+                            <option value="6 - 8 semestre">6 – 8 semestre</option>
+                            <option value="8 - 10 semestre">8 – 10 semestre</option>
+                          </select>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="form-field">
+                      <label>¿En qué área te gustaría ayudar? *</label>
+                      {AREAS_VOLUNTARIO.map((a) => (
+                        <label key={a} className="form-check">
+                          <input type="checkbox" name="areas" value={a} />
+                          <span>{a}</span>
+                        </label>
+                      ))}
+                      <span className="form-hint">Elige una o varias. "Cualquier área" si no tienes preferencia.</span>
+                    </div>
+
+                    <div className="form-field">
+                      <label htmlFor="v-coment">Comentarios</label>
+                      <textarea id="v-coment" name="comentarios" rows={2} placeholder="Opcional" />
+                    </div>
 
                     {error && <p className="form-error">{error}</p>}
                     <div className="form-actions">

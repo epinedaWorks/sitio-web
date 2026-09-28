@@ -76,6 +76,9 @@ export default async function EventoDetallePage({
                 <a className="btn btn-primary js-ponente" href="/conferencistas">
                   Ser conferencista, tallerista o expositor
                 </a>
+                <a className="btn btn-primary js-voluntario" href="/voluntarios">
+                  Ser voluntario(a)
+                </a>
               </div>
             )}
           </div>

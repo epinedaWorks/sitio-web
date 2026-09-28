@@ -41,6 +41,7 @@ model Event {
   speakerSubmissions SpeakerSubmission[]
   albums             Album[]
   registrations      AttendeeRegistration[]
+  volunteers         VolunteerApplication[]
 }
 
 // Inscripción de un participante/asistente a un evento
@@ -70,6 +71,27 @@ model AttendeeRegistration {
   eventId String
 
   @@unique([eventId, correo]) // evita que la misma persona se inscriba dos veces al mismo evento
+}
+
+// Postulación de voluntario(a) para un evento
+model VolunteerApplication {
+  id             String   @id @default(cuid())
+  nombre         String
+  correo         String
+  telefono       String?
+  disponibilidad String   // "Mañana" | "Todo el día" | "Tarde"
+  universidad    String?  // se pide sin importar el rol; "No aplica" si no estudia
+  carnet         String?  // solo si es de la UVG
+  semestre       String?  // solo si es de la UVG
+  edad           String?  // rango de edad
+  areas          String[] // Fotografía, Orden, Recepción, Conteo de tiempo, Moderador, "Cualquier área"
+  comentarios    String?
+  createdAt      DateTime @default(now())
+
+  event   Event  @relation(fields: [eventId], references: [id])
+  eventId String
+
+  @@unique([eventId, correo]) // evita que la misma persona se postule dos veces al mismo evento
 }
 
 // Álbum de fotos de una actividad específica dentro de un evento

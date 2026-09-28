@@ -110,6 +110,7 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
           telefono: f.get("telefono"),
           asistira: f.get("asistira"),
           rol: f.get("rol"),
+          edad: f.get("edad"),
           universidad: f.get("universidad"),
           semestre: f.get("semestre"),
           experiencia: f.get("experiencia"),
@@ -348,31 +349,36 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
                       </select>
                     </div>
 
+                    <div className="form-row">
+                      <div className="form-field">
+                        <label htmlFor="i-uni">¿De qué universidad?</label>
+                        <select id="i-uni" name="universidad" defaultValue="No aplica">
+                          <option value="No aplica">No aplica</option>
+                          <option value="Universidad del Valle de Guatemala (UVG)">Universidad del Valle (UVG)</option>
+                          <option value="Universidad de San Carlos (USAC)">Universidad de San Carlos (USAC)</option>
+                          <option value="Universidad Galileo">Universidad Galileo</option>
+                          <option value="Universidad Mariano Gálvez (UMG)">Universidad Mariano Gálvez (UMG)</option>
+                          <option value="Universidad Francisco Marroquín (UFM)">Universidad Francisco Marroquín (UFM)</option>
+                          <option value="Universidad Panamericana (UPANA)">Universidad Panamericana (UPANA)</option>
+                          <option value="Otra">Otra</option>
+                        </select>
+                      </div>
+                      <div className="form-field">
+                        <label htmlFor="i-edad">Tu edad</label>
+                        <input id="i-edad" name="edad" type="number" min={1} max={120} placeholder="Opcional" />
+                      </div>
+                    </div>
+
                     {rolAsistente === "Estudiante" && (
-                      <div className="form-row">
-                        <div className="form-field">
-                          <label htmlFor="i-uni">¿De qué universidad?</label>
-                          <select id="i-uni" name="universidad" defaultValue="">
-                            <option value="">Elige una…</option>
-                            <option value="Universidad del Valle de Guatemala (UVG)">Universidad del Valle (UVG)</option>
-                            <option value="Universidad de San Carlos (USAC)">Universidad de San Carlos (USAC)</option>
-                            <option value="Universidad Galileo">Universidad Galileo</option>
-                            <option value="Universidad Mariano Gálvez (UMG)">Universidad Mariano Gálvez (UMG)</option>
-                            <option value="Universidad Francisco Marroquín (UFM)">Universidad Francisco Marroquín (UFM)</option>
-                            <option value="Universidad Panamericana (UPANA)">Universidad Panamericana (UPANA)</option>
-                            <option value="Otra">Otra</option>
-                          </select>
-                        </div>
-                        <div className="form-field">
-                          <label htmlFor="i-sem">¿Qué semestre?</label>
-                          <select id="i-sem" name="semestre" defaultValue="">
-                            <option value="">Elige…</option>
-                            <option value="1 - 3 semestre">1 – 3 semestre</option>
-                            <option value="3 - 6 semestre">3 – 6 semestre</option>
-                            <option value="6 - 8 semestre">6 – 8 semestre</option>
-                            <option value="8 - 10 semestre">8 – 10 semestre</option>
-                          </select>
-                        </div>
+                      <div className="form-field">
+                        <label htmlFor="i-sem">¿Qué semestre?</label>
+                        <select id="i-sem" name="semestre" defaultValue="">
+                          <option value="">Elige…</option>
+                          <option value="1 - 3 semestre">1 – 3 semestre</option>
+                          <option value="3 - 6 semestre">3 – 6 semestre</option>
+                          <option value="6 - 8 semestre">6 – 8 semestre</option>
+                          <option value="8 - 10 semestre">8 – 10 semestre</option>
+                        </select>
                       </div>
                     )}
 

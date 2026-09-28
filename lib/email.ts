@@ -108,6 +108,7 @@ export type DatosInscripcion = {
   telefono?: string | null;
   asistira?: string | null;
   rol?: string | null;
+  edad?: number | null;
   universidad?: string | null;
   semestre?: string | null;
   experiencia?: string | null;
@@ -144,6 +145,7 @@ export async function sendRegistrationEmails(d: DatosInscripcion) {
        ${filas([
          ["¿Asistirá?", d.asistira],
          ["Rol", d.rol],
+         ["Edad", d.edad ? String(d.edad) : null],
          ["Universidad", d.universidad],
          ["Semestre", d.semestre],
          ["Experiencia con Python", d.experiencia],
@@ -166,6 +168,7 @@ export async function sendRegistrationEmails(d: DatosInscripcion) {
           ["Teléfono", d.telefono],
           ["¿Asistirá?", d.asistira],
           ["Rol", d.rol],
+          ["Edad", d.edad ? String(d.edad) : null],
           ["Universidad", d.universidad],
           ["Semestre", d.semestre],
           ["Experiencia", d.experiencia],

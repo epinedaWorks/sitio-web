@@ -51,7 +51,8 @@ model AttendeeRegistration {
   telefono     String?
   asistira     String?  // "Sí" | "No" | "Tal vez"
   rol          String?  // Estudiante, Desarrollador(a), etc. (permite valor libre)
-  universidad  String?  // solo si es estudiante
+  edad         Int?
+  universidad  String?  // se pide sin importar el rol; "No aplica" si no estudia (nunca vacío en el Excel)
   semestre     String?  // solo si es estudiante
   experiencia  String?  // Principiante | Intermedio | Avanzado
   comoSeEntero String?

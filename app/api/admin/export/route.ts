@@ -27,12 +27,16 @@ export async function GET(req: Request) {
       include: { event: true },
     });
     headers = [
-      "Nombre", "Correo", "Teléfono", "¿Asistirá?", "Rol", "Universidad", "Semestre",
+      "Nombre", "Correo", "Teléfono", "¿Asistirá?", "Rol", "Edad", "Universidad", "Semestre",
       "Experiencia con Python", "¿Cómo se enteró?", "Comentarios",
       "Autoriza compartir datos", "Ingresó", "Hora de ingreso", "Evento", "Fecha de inscripción",
     ];
     rows = data.map((r) => [
-      r.nombre, r.correo, r.telefono, r.asistira, r.rol, r.universidad, r.semestre,
+      r.nombre, r.correo, r.telefono, r.asistira, r.rol, r.edad,
+      // "Universidad" nunca debe quedar vacía en el Excel, aunque el registro
+      // sea de antes de pedirla o el respaldo de la API haya fallado.
+      r.universidad || "No aplica",
+      r.semestre,
       r.experiencia, r.comoSeEntero, r.comentarios,
       r.compartirDatos ? "Sí" : "No",
       r.checkedInAt ? "Sí" : "No",

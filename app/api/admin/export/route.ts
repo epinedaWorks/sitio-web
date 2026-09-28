@@ -28,7 +28,7 @@ export async function GET(req: Request) {
     });
     headers = [
       "Nombre", "Correo", "Teléfono", "¿Asistirá?", "Rol", "Edad", "Universidad", "Semestre",
-      "Experiencia con Python", "¿Cómo se enteró?", "Comentarios",
+      "Experiencia con Python", "Años de experiencia en tecnología", "¿Cómo se enteró?", "Comentarios",
       "Autoriza compartir datos", "Ingresó", "Hora de ingreso", "Evento", "Fecha de inscripción",
     ];
     rows = data.map((r) => [
@@ -37,7 +37,7 @@ export async function GET(req: Request) {
       // sea de antes de pedirla o el respaldo de la API haya fallado.
       r.universidad || "No aplica",
       r.semestre,
-      r.experiencia, r.comoSeEntero, r.comentarios,
+      r.experiencia, r.aniosExperiencia, r.comoSeEntero, r.comentarios,
       r.compartirDatos ? "Sí" : "No",
       r.checkedInAt ? "Sí" : "No",
       r.checkedInAt ? fmt(r.checkedInAt) : "",

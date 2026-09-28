@@ -108,10 +108,11 @@ export type DatosInscripcion = {
   telefono?: string | null;
   asistira?: string | null;
   rol?: string | null;
-  edad?: number | null;
+  edad?: string | null;
   universidad?: string | null;
   semestre?: string | null;
   experiencia?: string | null;
+  aniosExperiencia?: string | null;
   comoSeEntero?: string | null;
   comentarios?: string | null;
   compartirDatos?: boolean;
@@ -145,10 +146,11 @@ export async function sendRegistrationEmails(d: DatosInscripcion) {
        ${filas([
          ["¿Asistirá?", d.asistira],
          ["Rol", d.rol],
-         ["Edad", d.edad ? String(d.edad) : null],
+         ["Edad", d.edad],
          ["Universidad", d.universidad],
          ["Semestre", d.semestre],
          ["Experiencia con Python", d.experiencia],
+         ["Años de experiencia en tecnología", d.aniosExperiencia],
        ])}`
     ),
     replyTo: TEAM_LIST[0],
@@ -168,10 +170,11 @@ export async function sendRegistrationEmails(d: DatosInscripcion) {
           ["Teléfono", d.telefono],
           ["¿Asistirá?", d.asistira],
           ["Rol", d.rol],
-          ["Edad", d.edad ? String(d.edad) : null],
+          ["Edad", d.edad],
           ["Universidad", d.universidad],
           ["Semestre", d.semestre],
           ["Experiencia", d.experiencia],
+          ["Años de experiencia en tecnología", d.aniosExperiencia],
           ["¿Cómo se enteró?", d.comoSeEntero],
           ["Comentarios", d.comentarios],
           ["Autoriza compartir datos", d.compartirDatos ? "Sí" : "No"],

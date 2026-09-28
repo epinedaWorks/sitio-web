@@ -84,10 +84,11 @@ export default async function InscritosAdminPage() {
               <Field k="Correo" v={r.correo} />
               <Field k="Teléfono" v={r.telefono} />
               <Field k="Rol actual" v={r.rol} />
-              <Field k="Edad" v={r.edad?.toString()} />
+              <Field k="Edad" v={r.edad} />
               <Field k="Universidad" v={r.universidad || "No aplica"} />
               <Field k="Semestre" v={r.semestre} />
               <Field k="Experiencia con Python" v={r.experiencia} />
+              <Field k="Años de experiencia en tecnología" v={r.aniosExperiencia} />
               <Field k="¿Cómo se enteró?" v={r.comoSeEntero} />
               <Field k="Comentarios" v={r.comentarios} pre />
               <Field k="Autoriza compartir datos con empresas" v={r.compartirDatos ? "Sí" : "No"} />

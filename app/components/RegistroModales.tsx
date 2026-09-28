@@ -114,6 +114,7 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
           universidad: f.get("universidad"),
           semestre: f.get("semestre"),
           experiencia: f.get("experiencia"),
+          aniosExperiencia: f.get("aniosExperiencia"),
           comoSeEntero: f.get("comoSeEntero"),
           comentarios: f.get("comentarios"),
           compartirDatos: f.get("compartirDatos") === "on",
@@ -365,7 +366,15 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
                       </div>
                       <div className="form-field">
                         <label htmlFor="i-edad">Tu edad</label>
-                        <input id="i-edad" name="edad" type="number" min={1} max={120} placeholder="Opcional" />
+                        <select id="i-edad" name="edad" defaultValue="">
+                          <option value="">Prefiero no decir</option>
+                          <option value="Menos de 18">Menos de 18</option>
+                          <option value="18 - 24">18 – 24</option>
+                          <option value="25 - 34">25 – 34</option>
+                          <option value="35 - 44">35 – 44</option>
+                          <option value="45 - 54">45 – 54</option>
+                          <option value="55 o más">55 o más</option>
+                        </select>
                       </div>
                     </div>
 
@@ -389,6 +398,18 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
                         <option value="Principiante">Principiante</option>
                         <option value="Intermedio">Intermedio</option>
                         <option value="Avanzado">Avanzado</option>
+                      </select>
+                    </div>
+                    <div className="form-field">
+                      <label htmlFor="i-exp-anios">Años de experiencia en tecnología</label>
+                      <select id="i-exp-anios" name="aniosExperiencia" defaultValue="">
+                        <option value="">Prefiero no decir</option>
+                        <option value="Sin experiencia">Sin experiencia</option>
+                        <option value="Menos de 1 año">Menos de 1 año</option>
+                        <option value="1 - 2 años">1 – 2 años</option>
+                        <option value="3 - 5 años">3 – 5 años</option>
+                        <option value="6 - 10 años">6 – 10 años</option>
+                        <option value="Más de 10 años">Más de 10 años</option>
                       </select>
                     </div>
                     <div className="form-field">

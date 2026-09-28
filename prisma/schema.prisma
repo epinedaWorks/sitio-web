@@ -51,10 +51,11 @@ model AttendeeRegistration {
   telefono     String?
   asistira     String?  // "Sí" | "No" | "Tal vez"
   rol          String?  // Estudiante, Desarrollador(a), etc. (permite valor libre)
-  edad         Int?
+  edad         String?  // rango de edad (ej. "25 - 34"), no un número exacto
   universidad  String?  // se pide sin importar el rol; "No aplica" si no estudia (nunca vacío en el Excel)
   semestre     String?  // solo si es estudiante
-  experiencia  String?  // Principiante | Intermedio | Avanzado
+  experiencia  String?  // Principiante | Intermedio | Avanzado (nivel con Python)
+  aniosExperiencia String? // años de experiencia en tecnología, por rango (ej. "3 - 5 años")
   comoSeEntero String?
   comentarios  String?
   compartirDatos Boolean @default(false) // autoriza compartir contacto con empresas aliadas

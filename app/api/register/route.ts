@@ -47,6 +47,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
     }
 
+    // Edad es opcional; si viene, debe ser un número razonable.
+    let edad: number | null = null;
+    if (body.edad !== undefined && body.edad !== null && str(body.edad) !== "") {
+      const n = Number(body.edad);
+      if (!Number.isInteger(n) || n < 1 || n > 120) {
+        return NextResponse.json({ error: "La edad no es válida" }, { status: 400 });
+      }
+      edad = n;
+    }
+
+    // La universidad se pide sin importar el rol; si no aplica, se guarda así
+    // para que el campo nunca quede vacío en el Excel exportado.
+    const universidad = str(body.universidad) || "No aplica";
+
     const registration = await prisma.attendeeRegistration.create({
       data: {
         nombre,
@@ -54,7 +68,8 @@ export async function POST(req: Request) {
         telefono: str(body.telefono) || null,
         asistira,
         rol,
-        universidad: str(body.universidad) || null,
+        edad,
+        universidad,
         semestre: str(body.semestre) || null,
         experiencia: str(body.experiencia) || null,
         comoSeEntero: str(body.comoSeEntero) || null,
@@ -72,6 +87,7 @@ export async function POST(req: Request) {
       telefono: registration.telefono,
       asistira: registration.asistira,
       rol: registration.rol,
+      edad: registration.edad,
       universidad: registration.universidad,
       semestre: registration.semestre,
       experiencia: registration.experiencia,

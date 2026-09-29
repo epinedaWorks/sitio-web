@@ -95,8 +95,20 @@ export default async function InscritosAdminPage() {
               <Field k="Evento" v={r.event.title} />
               <Field k="Fecha de inscripción" v={fechaHora(r.createdAt)} />
               <Field
-                k="Asistencia"
+                k="Entrada"
                 v={r.checkedInAt ? `Ingresó ${fechaHora(r.checkedInAt)}` : "No ha ingresado"}
+              />
+              <Field
+                k="Exposición de proyectos"
+                v={r.proyectosAt ? `Pasó ${fechaHora(r.proyectosAt)}` : "No ha pasado"}
+              />
+              <Field
+                k="Coffee break"
+                v={r.coffeeAt ? `Pasó ${fechaHora(r.coffeeAt)}` : "No ha pasado"}
+              />
+              <Field
+                k="Almuerzo"
+                v={r.almuerzoAt ? `Se le dio ${fechaHora(r.almuerzoAt)}` : "No se le ha dado"}
               />
             </dl>
             <form

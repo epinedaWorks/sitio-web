@@ -9,6 +9,7 @@ import { fechaDesdeInput } from "@/lib/fecha";
 import { enviarAnuncioMasivo, type DestinatarioAnuncio } from "@/lib/email";
 import { ES_CORREO_ANUNCIO, dedupePorCorreo } from "@/lib/anuncios";
 import { requireAdminSession, requireAdminRole, requireEditorSession } from "@/lib/require-admin";
+import { TIPOS_ESCANEO } from "@/lib/scan";
 import {
   invalidarSettingsCache,
   SETTING_TEAM_EMAIL,
@@ -30,7 +31,8 @@ export async function crearUsuario(formData: FormData) {
   const email = String(formData.get("email") || "").trim().toLowerCase();
   const password = String(formData.get("password") || "");
   const roleRaw = String(formData.get("role") || "EDITOR");
-  const role = roleRaw === "ADMIN" ? "ADMIN" : roleRaw === "VIEWER" ? "VIEWER" : "EDITOR";
+  const role =
+    roleRaw === "ADMIN" ? "ADMIN" : roleRaw === "VIEWER" ? "VIEWER" : roleRaw === "ESCANEO" ? "ESCANEO" : "EDITOR";
 
   if (!name || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8) {
     redirect("/admin/dashboard/usuarios?msg=datos");
@@ -61,7 +63,7 @@ export async function eliminarUsuario(id: string) {
 // Cambia el rol de un usuario que ya existe. No se puede cambiar el rol
 // propio (para no encerrarse a uno mismo por accidente) ni quitarle ADMIN
 // al último administrador que queda.
-export async function actualizarRolUsuario(id: string, role: "ADMIN" | "EDITOR" | "VIEWER") {
+export async function actualizarRolUsuario(id: string, role: "ADMIN" | "EDITOR" | "VIEWER" | "ESCANEO") {
   const session = await requireAdminRole();
   const yo = (session.user as { email?: string } | undefined)?.email;
   const objetivo = await prisma.adminUser.findUnique({ where: { id } });
@@ -74,6 +76,16 @@ export async function actualizarRolUsuario(id: string, role: "ADMIN" | "EDITOR" 
   }
 
   await prisma.adminUser.update({ where: { id }, data: { role } });
+  revalidatePath("/admin/dashboard/usuarios");
+}
+
+// Qué puestos de escaneo (entrada, proyectos, coffee, almuerzo) puede
+// trabajar este usuario el día del evento. Solo aplica de verdad a EDITOR:
+// ADMIN siempre puede todo y VIEWER nunca puede, sin importar esta lista.
+export async function actualizarScanTiposUsuario(id: string, scanTipos: string[]) {
+  await requireAdminRole();
+  const validos = scanTipos.filter((t) => (TIPOS_ESCANEO as readonly string[]).includes(t));
+  await prisma.adminUser.update({ where: { id }, data: { scanTipos: validos } });
   revalidatePath("/admin/dashboard/usuarios");
 }
 
@@ -106,7 +118,7 @@ export async function guardarAjustes(formData: FormData) {
 
 // Cambia la contraseña del usuario admin que tiene la sesión activa.
 export async function cambiarPassword(formData: FormData) {
-  const session = await requireAdminSession();
+  const session = await requireAdminSession({ permiteSoloEscaneo: true });
   const email = session.user?.email;
   if (!email) redirect("/admin/login");
 

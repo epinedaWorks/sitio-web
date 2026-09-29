@@ -3,12 +3,13 @@
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 
-type Rol = "ADMIN" | "EDITOR" | "VIEWER";
+type Rol = "ADMIN" | "EDITOR" | "VIEWER" | "ESCANEO";
 
-const ETIQUETAS: Record<Rol, string> = {
+export const ETIQUETAS: Record<Rol, string> = {
   ADMIN: "Admin",
   EDITOR: "Editor",
   VIEWER: "Solo lectura",
+  ESCANEO: "Solo escaneo",
 };
 
 // Cambiar el rol de un usuario ya creado, con la misma respuesta inmediata

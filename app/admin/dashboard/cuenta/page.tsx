@@ -14,7 +14,7 @@ export default async function CuentaPage({
 }: {
   searchParams: { msg?: string };
 }) {
-  const session = await requireAdminSession();
+  const session = await requireAdminSession({ permiteSoloEscaneo: true });
   const aviso = searchParams.msg ? MSG[searchParams.msg] : null;
 
   const input: React.CSSProperties = {

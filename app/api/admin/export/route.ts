@@ -29,7 +29,9 @@ export async function GET(req: Request) {
     headers = [
       "Nombre", "Correo", "Teléfono", "¿Asistirá?", "Rol", "Edad", "Universidad", "Semestre",
       "Experiencia con Python", "Años de experiencia en tecnología", "¿Cómo se enteró?", "Comentarios",
-      "Autoriza compartir datos", "Ingresó", "Hora de ingreso", "Evento", "Fecha de inscripción",
+      "Autoriza compartir datos", "Ingresó", "Hora de ingreso",
+      "Vio exposición de proyectos", "Coffee break", "Almuerzo",
+      "Evento", "Fecha de inscripción",
     ];
     rows = data.map((r) => [
       r.nombre, r.correo, r.telefono, r.asistira, r.rol, r.edad,
@@ -41,6 +43,9 @@ export async function GET(req: Request) {
       r.compartirDatos ? "Sí" : "No",
       r.checkedInAt ? "Sí" : "No",
       r.checkedInAt ? fmt(r.checkedInAt) : "",
+      r.proyectosAt ? "Sí" : "No",
+      r.coffeeAt ? "Sí" : "No",
+      r.almuerzoAt ? "Sí" : "No",
       r.event.title, fmt(r.createdAt),
     ]);
   } else if (tipo === "contacto") {

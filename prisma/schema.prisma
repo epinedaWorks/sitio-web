@@ -17,13 +17,18 @@ model AdminUser {
   passwordHash String
   name         String
   role         Role     @default(EDITOR)
+  // Qué tipos de escaneo puede hacer el día del evento (ver lib/scan.ts).
+  // Vacío = sin restricción (puede escanear todo); aplica a EDITOR y
+  // ESCANEO — ADMIN siempre puede todo y VIEWER nunca puede escanear.
+  scanTipos    String[] @default([])
   createdAt    DateTime @default(now())
 }
 
 enum Role {
   ADMIN
   EDITOR
-  VIEWER // solo lectura: entra al panel y ve todo, pero no puede crear, cambiar ni borrar nada
+  VIEWER   // solo lectura: entra al panel y ve todo, pero no puede crear, cambiar ni borrar nada
+  ESCANEO  // solo escaneo: únicamente entra a Tomar asistencia (según sus scanTipos); no ve nada más del panel
 }
 
 // Evento (ej. XPDay 2026)
@@ -62,10 +67,19 @@ model AttendeeRegistration {
   compartirDatos Boolean @default(false) // autoriza compartir contacto con empresas aliadas
   createdAt    DateTime @default(now())
 
-  // Check-in con QR el día del evento
+  // Check-in con QR el día del evento — un puesto por tipo de escaneo,
+  // todos con el mismo QR de la persona (ver lib/scan.ts).
   checkinToken String?   @unique // código único que va en el QR de la persona
-  checkedInAt  DateTime? // cuándo se registró su asistencia (null = no ha llegado)
-  checkedInBy  String?   // correo de quien escaneó
+  checkedInAt  DateTime? // entrada: cuándo se registró su asistencia (null = no ha llegado)
+  checkedInBy  String?   // correo de quien escaneó la entrada
+  proyectosAt  DateTime? // cuándo pasó a ver la exposición de proyectos
+  proyectosBy  String?
+  coffeeAt     DateTime? // cuándo pasó por el coffee break
+  coffeeBy     String?
+  almuerzoAt   DateTime? // cuándo se le dio almuerzo (requiere entrada + proyectos, ver /api/admin/checkin)
+  almuerzoBy   String?
+  tardeAt      DateTime? // jornada de la tarde: quienes se quedaron después de almuerzo
+  tardeBy      String?
 
   event   Event  @relation(fields: [eventId], references: [id])
   eventId String

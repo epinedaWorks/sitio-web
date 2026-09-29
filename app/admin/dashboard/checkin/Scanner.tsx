@@ -3,22 +3,27 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { fechaHora } from "@/lib/fecha";
+import { ETIQUETA_TIPO, type TipoEscaneo } from "@/lib/scan";
 
 type Resultado = {
-  status: "ok" | "repetido" | "noexiste";
+  status: "ok" | "repetido" | "noexiste" | "sin_permiso" | "falta_requisito";
   nombre?: string;
   correo?: string;
   rol?: string;
   asistira?: string;
   evento?: string;
+  tipo?: TipoEscaneo;
   checkedInAt?: string | null;
   checkedInBy?: string | null;
+  motivo?: string;
 };
 
 const COLORES: Record<Resultado["status"], { bg: string; fg: string; icono: string; titulo: string }> = {
   ok: { bg: "#159d68", fg: "#fff", icono: "✅", titulo: "Asistencia registrada" },
-  repetido: { bg: "#e8a33d", fg: "#241700", icono: "⚠️", titulo: "Ya había ingresado" },
+  repetido: { bg: "#e8a33d", fg: "#241700", icono: "⚠️", titulo: "Ya estaba registrado en este puesto" },
   noexiste: { bg: "#c0392b", fg: "#fff", icono: "❌", titulo: "Código no reconocido" },
+  falta_requisito: { bg: "#c0392b", fg: "#fff", icono: "🚫", titulo: "Todavía no puede pasar" },
+  sin_permiso: { bg: "#c0392b", fg: "#fff", icono: "🔒", titulo: "No tienes permiso para este puesto" },
 };
 
 function beep(ok: boolean) {
@@ -38,12 +43,13 @@ function beep(ok: boolean) {
   }
 }
 
-export default function Scanner() {
+export default function Scanner({ tipos }: { tipos: TipoEscaneo[] }) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
   const ultimoRef = useRef<{ txt: string; t: number }>({ txt: "", t: 0 });
 
+  const [tipo, setTipo] = useState<TipoEscaneo>(tipos[0]);
   const [escaneando, setEscaneando] = useState(false);
   const [error, setError] = useState("");
   const [resultado, setResultado] = useState<Resultado | null>(null);
@@ -57,7 +63,7 @@ export default function Scanner() {
         const res = await fetch("/api/admin/checkin", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
+          body: JSON.stringify({ ...payload, tipo }),
         });
         const data: Resultado = await res.json();
         setResultado(data);
@@ -72,7 +78,7 @@ export default function Scanner() {
         setEnviando(false);
       }
     },
-    [router]
+    [router, tipo]
   );
 
   const iniciar = useCallback(async () => {
@@ -144,6 +150,36 @@ export default function Scanner() {
 
   return (
     <div style={{ maxWidth: 480 }}>
+      {tipos.length > 1 && (
+        <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
+          {tipos.map((t) => (
+            <button
+              key={t}
+              onClick={() => {
+                setTipo(t);
+                setResultado(null);
+              }}
+              style={{
+                padding: "8px 12px",
+                borderRadius: 999,
+                border: "1px solid #ccc",
+                fontWeight: t === tipo ? 700 : 400,
+                background: t === tipo ? "#0a1310" : "#fff",
+                color: t === tipo ? "#fff" : "#111",
+                cursor: "pointer",
+              }}
+            >
+              {ETIQUETA_TIPO[t]}
+            </button>
+          ))}
+        </div>
+      )}
+      {tipos.length === 1 && (
+        <p style={{ fontSize: 13, opacity: 0.7, marginBottom: 10 }}>
+          Puesto: <b>{ETIQUETA_TIPO[tipo]}</b>
+        </p>
+      )}
+
       <div
         style={{
           position: "relative",
@@ -201,7 +237,7 @@ export default function Scanner() {
         >
           <div style={{ fontSize: 28 }}>{c.icono}</div>
           <div style={{ fontWeight: 700, fontSize: 18 }}>{c.titulo}</div>
-          {resultado.status !== "noexiste" ? (
+          {resultado.status !== "noexiste" && resultado.status !== "sin_permiso" ? (
             <>
               <div style={{ fontSize: 22, fontWeight: 700, marginTop: 6 }}>{resultado.nombre}</div>
               <div style={{ fontSize: 13, opacity: 0.9 }}>
@@ -210,8 +246,11 @@ export default function Scanner() {
               </div>
               {resultado.status === "repetido" && resultado.checkedInAt && (
                 <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>
-                  Ingresó el {fechaHora(new Date(resultado.checkedInAt))}
+                  Registrado el {fechaHora(new Date(resultado.checkedInAt))}
                 </div>
+              )}
+              {resultado.status === "falta_requisito" && resultado.motivo && (
+                <div style={{ fontSize: 13, marginTop: 6 }}>Para darle almuerzo: {resultado.motivo}.</div>
               )}
               {resultado.status === "ok" && resultado.asistira && resultado.asistira !== "Sí" && (
                 <div style={{ fontSize: 13, marginTop: 6 }}>
@@ -221,7 +260,9 @@ export default function Scanner() {
             </>
           ) : (
             <div style={{ fontSize: 13, marginTop: 6 }}>
-              El código no corresponde a ninguna inscripción.
+              {resultado.status === "sin_permiso"
+                ? "Pide a un Admin que te habilite este puesto de escaneo."
+                : "El código no corresponde a ninguna inscripción."}
             </div>
           )}
         </div>

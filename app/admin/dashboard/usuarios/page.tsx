@@ -1,8 +1,9 @@
 import { requireAdminRole } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
-import { crearUsuario, eliminarUsuario, actualizarRolUsuario } from "../actions";
+import { crearUsuario, eliminarUsuario, actualizarRolUsuario, actualizarScanTiposUsuario } from "../actions";
 import ConfirmDelete from "../ConfirmDelete";
-import RolSelector from "../RolSelector";
+import RolSelector, { ETIQUETAS } from "../RolSelector";
+import ScanTiposSelector from "../ScanTiposSelector";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +43,12 @@ export default async function UsuariosPage({
         los correos). <b>Editor</b> gestiona eventos, galería, ponentes, inscritos y contacto, pero
         no puede tocar usuarios ni la configuración de correo. <b>Solo lectura</b> entra y ve todo
         igual, pero no puede crear, cambiar ni borrar nada — ideal para alguien que solo necesita
-        consultar (dar seguimiento, revisar datos) sin riesgo de tocar algo por accidente.
+        consultar (dar seguimiento, revisar datos) sin riesgo de tocar algo por accidente.{" "}
+        <b>Solo escaneo</b> es para el equipo que solo va a tomar asistencia el día del evento: al
+        entrar va directo a "Tomar asistencia" y no ve ninguna otra sección del panel. Además, a
+        cada <b>Editor</b> o <b>Solo escaneo</b> le puedes marcar qué puestos puede trabajar
+        (entrada, exposición de proyectos, coffee break, almuerzo o jornada de la tarde) — sin
+        marcar ninguno, puede escanear los cinco.
       </p>
 
       {aviso && <p style={{ color: aviso[1], fontWeight: 600 }}>{aviso[0]}</p>}
@@ -63,6 +69,7 @@ export default async function UsuariosPage({
           <option value="EDITOR">Editor</option>
           <option value="ADMIN">Admin</option>
           <option value="VIEWER">Solo lectura</option>
+          <option value="ESCANEO">Solo escaneo</option>
         </select>
         <button type="submit" style={{ ...input, cursor: "pointer", fontWeight: 600 }}>
           Crear usuario
@@ -92,11 +99,11 @@ export default async function UsuariosPage({
                   fontSize: 12,
                   padding: "2px 8px",
                   borderRadius: 999,
-                  background: u.role === "ADMIN" ? "#d5f5e3" : u.role === "VIEWER" ? "#eee" : "#eef",
-                  color: u.role === "ADMIN" ? "#1b5e20" : u.role === "VIEWER" ? "#555" : "#334",
+                  background: u.role === "ADMIN" ? "#d5f5e3" : u.role === "VIEWER" || u.role === "ESCANEO" ? "#eee" : "#eef",
+                  color: u.role === "ADMIN" ? "#1b5e20" : u.role === "VIEWER" || u.role === "ESCANEO" ? "#555" : "#334",
                 }}
               >
-                {u.role === "VIEWER" ? "Solo lectura" : u.role}
+                {ETIQUETAS[u.role]}
               </span>
             ) : (
               <RolSelector id={u.id} rol={u.role} actualizar={actualizarRolUsuario} />
@@ -105,6 +112,11 @@ export default async function UsuariosPage({
               {u.email}
               {u.email === yo ? " · tú" : ""}
             </div>
+            {(u.role === "EDITOR" || u.role === "ESCANEO") && (
+              <div style={{ marginTop: 6 }}>
+                <ScanTiposSelector id={u.id} tipos={u.scanTipos} actualizar={actualizarScanTiposUsuario} />
+              </div>
+            )}
           </div>
           {u.email === yo ? (
             <span style={{ fontSize: 12, opacity: 0.5 }}>—</span>

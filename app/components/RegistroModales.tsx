@@ -399,6 +399,11 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
                         <option value="Analista de Datos">Analista de Datos</option>
                         <option value="Científico(a) de Datos">Científico(a) de Datos</option>
                         <option value="Profesor(a)">Profesor(a)</option>
+                        <option value="Gerente">Gerente</option>
+                        <option value="Director(a)">Director(a)</option>
+                        <option value="Emprendedor(a) / Dueño(a) de negocio">Emprendedor(a) / Dueño(a) de negocio</option>
+                        <option value="Líder de Proyecto / Product Manager">Líder de Proyecto / Product Manager</option>
+                        <option value="Consultor(a) de Negocios">Consultor(a) de Negocios</option>
                         <option value="Otro">Otro</option>
                       </select>
                     </div>

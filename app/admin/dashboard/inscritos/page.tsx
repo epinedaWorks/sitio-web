@@ -2,6 +2,7 @@ import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { eliminarInscrito, toggleCheckin } from "../actions";
 import ConfirmDelete from "../ConfirmDelete";
+import Buscador from "../Buscador";
 import { fechaHora, soloHora } from "@/lib/fecha";
 
 export default async function InscritosAdminPage() {
@@ -51,9 +52,17 @@ export default async function InscritosAdminPage() {
 
       {registrations.length === 0 && <p>Aún no hay inscritos.</p>}
 
+      {registrations.length > 0 && (
+        <Buscador selector="[data-buscar]" placeholder="Buscar por nombre, correo, teléfono o rol…" />
+      )}
+
       {registrations.map((r) => (
         <div
           key={r.id}
+          data-buscar={[r.nombre, r.correo, r.telefono, r.rol, r.universidad, r.event.title]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase()}
           style={{
             display: "flex",
             alignItems: "flex-start",

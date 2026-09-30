@@ -47,9 +47,21 @@ export default function Scanner({ tipos }: { tipos: TipoEscaneo[] }) {
   const router = useRouter();
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
-  const ultimoRef = useRef<{ txt: string; t: number }>({ txt: "", t: 0 });
+  // Clave = puesto + código: evita releer el mismo QR mientras la cámara
+  // sigue apuntando a él, pero SOLO dentro de un mismo puesto — al cambiar
+  // de puesto (o de persona) debe poder volver a leerlo de inmediato.
+  const ultimoRef = useRef<{ clave: string; t: number }>({ clave: "", t: 0 });
 
   const [tipo, setTipo] = useState<TipoEscaneo>(tipos[0]);
+  // La cámara queda abierta mientras cambias de puesto: el lector de QR llama
+  // siempre a la misma función, así que "tipo" (el estado de React) queda
+  // "congelado" en lo que valía cuando arrancó la cámara. Esta referencia sí
+  // se mantiene al día, y es la que de verdad usamos al registrar un escaneo.
+  const tipoRef = useRef<TipoEscaneo>(tipos[0]);
+  useEffect(() => {
+    tipoRef.current = tipo;
+  }, [tipo]);
+
   const [escaneando, setEscaneando] = useState(false);
   const [error, setError] = useState("");
   const [resultado, setResultado] = useState<Resultado | null>(null);
@@ -63,7 +75,7 @@ export default function Scanner({ tipos }: { tipos: TipoEscaneo[] }) {
         const res = await fetch("/api/admin/checkin", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ ...payload, tipo }),
+          body: JSON.stringify({ ...payload, tipo: tipoRef.current }),
         });
         const data: Resultado = await res.json();
         setResultado(data);
@@ -78,7 +90,7 @@ export default function Scanner({ tipos }: { tipos: TipoEscaneo[] }) {
         setEnviando(false);
       }
     },
-    [router, tipo]
+    [router]
   );
 
   const iniciar = useCallback(async () => {
@@ -93,9 +105,10 @@ export default function Scanner({ tipos }: { tipos: TipoEscaneo[] }) {
     const onResult = (result?: { getText: () => string }) => {
       if (!result) return;
       const txt = result.getText();
+      const clave = `${tipoRef.current}:${txt}`;
       const ahora = Date.now();
-      if (txt === ultimoRef.current.txt && ahora - ultimoRef.current.t < 3500) return;
-      ultimoRef.current = { txt, t: ahora };
+      if (clave === ultimoRef.current.clave && ahora - ultimoRef.current.t < 3500) return;
+      ultimoRef.current = { clave, t: ahora };
       registrar({ codigo: txt });
     };
 
@@ -236,6 +249,21 @@ export default function Scanner({ tipos }: { tipos: TipoEscaneo[] }) {
           }}
         >
           <div style={{ fontSize: 28 }}>{c.icono}</div>
+          <div
+            style={{
+              display: "inline-block",
+              fontSize: 12,
+              fontWeight: 700,
+              letterSpacing: 0.3,
+              textTransform: "uppercase",
+              background: "rgba(0,0,0,0.18)",
+              borderRadius: 999,
+              padding: "3px 10px",
+              marginBottom: 6,
+            }}
+          >
+            Puesto: {ETIQUETA_TIPO[resultado.tipo ?? tipo]}
+          </div>
           <div style={{ fontWeight: 700, fontSize: 18 }}>{c.titulo}</div>
           {resultado.status !== "noexiste" && resultado.status !== "sin_permiso" ? (
             <>
@@ -246,7 +274,9 @@ export default function Scanner({ tipos }: { tipos: TipoEscaneo[] }) {
               </div>
               {resultado.status === "repetido" && resultado.checkedInAt && (
                 <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>
-                  Registrado el {fechaHora(new Date(resultado.checkedInAt))}
+                  Ya se le tomó asistencia en «{ETIQUETA_TIPO[resultado.tipo ?? tipo]}» el{" "}
+                  {fechaHora(new Date(resultado.checkedInAt))}
+                  {resultado.checkedInBy ? ` (por ${resultado.checkedInBy})` : ""}.
                 </div>
               )}
               {resultado.status === "falta_requisito" && resultado.motivo && (

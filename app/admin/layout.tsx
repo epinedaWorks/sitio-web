@@ -7,7 +7,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       className="pg-admin"
       style={{ background: "#faf8f4", color: "#1b1b1b", minHeight: "100vh", paddingBottom: 40 }}
     >
-      <style>{`
+      <style
+        dangerouslySetInnerHTML={{
+          __html: `
         .pg-admin { font-family: "Inter", system-ui, -apple-system, sans-serif; }
         .pg-admin h1, .pg-admin h2, .pg-admin h3, .pg-admin h4 {
           font-family: "Bricolage Grotesque", "Inter", system-ui, sans-serif;
@@ -24,7 +26,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           font: inherit; border: 1px solid #ccc; border-radius: 8px; padding: 9px 11px;
         }
         .pg-admin summary { list-style: revert; }
-      `}</style>
+      `,
+        }}
+      />
       {children}
     </div>
   );

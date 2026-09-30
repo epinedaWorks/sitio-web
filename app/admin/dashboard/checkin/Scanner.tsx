@@ -67,6 +67,15 @@ export default function Scanner({ tipos }: { tipos: TipoEscaneo[] }) {
   const [resultado, setResultado] = useState<Resultado | null>(null);
   const [manual, setManual] = useState("");
   const [enviando, setEnviando] = useState(false);
+  // El aviso se cierra solo después de un rato, o antes si lo tocan.
+  const ocultarRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const cerrarResultado = useCallback(() => {
+    if (ocultarRef.current) clearTimeout(ocultarRef.current);
+    setResultado(null);
+  }, []);
+  useEffect(() => () => {
+    if (ocultarRef.current) clearTimeout(ocultarRef.current);
+  }, []);
 
   const registrar = useCallback(
     async (payload: { codigo?: string; correo?: string }, sonar = true) => {
@@ -79,6 +88,8 @@ export default function Scanner({ tipos }: { tipos: TipoEscaneo[] }) {
         });
         const data: Resultado = await res.json();
         setResultado(data);
+        if (ocultarRef.current) clearTimeout(ocultarRef.current);
+        ocultarRef.current = setTimeout(() => setResultado(null), 5000);
         if (sonar) beep(data.status === "ok");
         try {
           navigator.vibrate?.(data.status === "ok" ? 60 : [40, 40, 40]);
@@ -95,7 +106,7 @@ export default function Scanner({ tipos }: { tipos: TipoEscaneo[] }) {
 
   const iniciar = useCallback(async () => {
     setError("");
-    setResultado(null);
+    cerrarResultado();
 
     if (!navigator.mediaDevices?.getUserMedia) {
       setError("Este navegador no permite usar la cámara. Prueba con Chrome o Safari actualizado.");
@@ -149,7 +160,7 @@ export default function Scanner({ tipos }: { tipos: TipoEscaneo[] }) {
         );
       }
     }
-  }, [registrar]);
+  }, [registrar, cerrarResultado]);
 
   const detener = useCallback(() => {
     controlsRef.current?.stop();
@@ -163,6 +174,7 @@ export default function Scanner({ tipos }: { tipos: TipoEscaneo[] }) {
 
   return (
     <div style={{ maxWidth: 480 }}>
+      <style>{`@keyframes ag-scan-pop{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}`}</style>
       {tipos.length > 1 && (
         <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
           {tipos.map((t) => (
@@ -170,7 +182,7 @@ export default function Scanner({ tipos }: { tipos: TipoEscaneo[] }) {
               key={t}
               onClick={() => {
                 setTipo(t);
-                setResultado(null);
+                cerrarResultado();
               }}
               style={{
                 padding: "8px 12px",
@@ -240,61 +252,106 @@ export default function Scanner({ tipos }: { tipos: TipoEscaneo[] }) {
 
       {c && resultado && (
         <div
+          onClick={cerrarResultado}
+          role="alert"
           style={{
-            marginTop: 14,
-            background: c.bg,
-            color: c.fg,
-            borderRadius: 14,
-            padding: "18px 20px",
+            position: "fixed",
+            inset: 0,
+            zIndex: 1000,
+            background: "rgba(0,0,0,0.6)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            padding: 20,
+            cursor: "pointer",
           }}
         >
-          <div style={{ fontSize: 28 }}>{c.icono}</div>
           <div
+            onClick={(e) => e.stopPropagation()}
             style={{
-              display: "inline-block",
-              fontSize: 12,
-              fontWeight: 700,
-              letterSpacing: 0.3,
-              textTransform: "uppercase",
-              background: "rgba(0,0,0,0.18)",
-              borderRadius: 999,
-              padding: "3px 10px",
-              marginBottom: 6,
+              position: "relative",
+              width: "100%",
+              maxWidth: 420,
+              maxHeight: "85vh",
+              overflowY: "auto",
+              background: c.bg,
+              color: c.fg,
+              borderRadius: 20,
+              padding: "30px 26px",
+              textAlign: "center",
+              boxShadow: "0 20px 60px rgba(0,0,0,.45)",
+              animation: "ag-scan-pop .18s ease-out",
+              cursor: "default",
             }}
           >
-            Puesto: {ETIQUETA_TIPO[resultado.tipo ?? tipo]}
-          </div>
-          <div style={{ fontWeight: 700, fontSize: 18 }}>{c.titulo}</div>
-          {resultado.status !== "noexiste" && resultado.status !== "sin_permiso" ? (
-            <>
-              <div style={{ fontSize: 22, fontWeight: 700, marginTop: 6 }}>{resultado.nombre}</div>
-              <div style={{ fontSize: 13, opacity: 0.9 }}>
-                {resultado.rol ? `${resultado.rol} · ` : ""}
-                {resultado.evento}
-              </div>
-              {resultado.status === "repetido" && resultado.checkedInAt && (
-                <div style={{ fontSize: 13, marginTop: 6, opacity: 0.95 }}>
-                  Ya se le tomó asistencia en «{ETIQUETA_TIPO[resultado.tipo ?? tipo]}» el{" "}
-                  {fechaHora(new Date(resultado.checkedInAt))}
-                  {resultado.checkedInBy ? ` (por ${resultado.checkedInBy})` : ""}.
-                </div>
-              )}
-              {resultado.status === "falta_requisito" && resultado.motivo && (
-                <div style={{ fontSize: 13, marginTop: 6 }}>Para darle almuerzo: {resultado.motivo}.</div>
-              )}
-              {resultado.status === "ok" && resultado.asistira && resultado.asistira !== "Sí" && (
-                <div style={{ fontSize: 13, marginTop: 6 }}>
-                  Nota: al inscribirse marcó “{resultado.asistira}”.
-                </div>
-              )}
-            </>
-          ) : (
-            <div style={{ fontSize: 13, marginTop: 6 }}>
-              {resultado.status === "sin_permiso"
-                ? "Pide a un Admin que te habilite este puesto de escaneo."
-                : "El código no corresponde a ninguna inscripción."}
+            <button
+              onClick={cerrarResultado}
+              aria-label="Cerrar aviso"
+              style={{
+                position: "absolute",
+                top: 10,
+                right: 10,
+                width: 32,
+                height: 32,
+                borderRadius: 999,
+                border: 0,
+                background: "rgba(0,0,0,0.18)",
+                color: "inherit",
+                fontSize: 16,
+                cursor: "pointer",
+              }}
+            >
+              ✕
+            </button>
+            <div style={{ fontSize: 44 }}>{c.icono}</div>
+            <div
+              style={{
+                display: "inline-block",
+                fontSize: 12,
+                fontWeight: 700,
+                letterSpacing: 0.3,
+                textTransform: "uppercase",
+                background: "rgba(0,0,0,0.18)",
+                borderRadius: 999,
+                padding: "3px 10px",
+                margin: "8px 0 6px",
+              }}
+            >
+              Puesto: {ETIQUETA_TIPO[resultado.tipo ?? tipo]}
             </div>
-          )}
+            <div style={{ fontWeight: 700, fontSize: 22 }}>{c.titulo}</div>
+            {resultado.status !== "noexiste" && resultado.status !== "sin_permiso" ? (
+              <>
+                <div style={{ fontSize: 26, fontWeight: 700, marginTop: 10 }}>{resultado.nombre}</div>
+                <div style={{ fontSize: 14, opacity: 0.9 }}>
+                  {resultado.rol ? `${resultado.rol} · ` : ""}
+                  {resultado.evento}
+                </div>
+                {resultado.status === "repetido" && resultado.checkedInAt && (
+                  <div style={{ fontSize: 14, marginTop: 10, opacity: 0.95 }}>
+                    Ya se le tomó asistencia en «{ETIQUETA_TIPO[resultado.tipo ?? tipo]}» el{" "}
+                    {fechaHora(new Date(resultado.checkedInAt))}
+                    {resultado.checkedInBy ? ` (por ${resultado.checkedInBy})` : ""}.
+                  </div>
+                )}
+                {resultado.status === "falta_requisito" && resultado.motivo && (
+                  <div style={{ fontSize: 14, marginTop: 10 }}>Para darle almuerzo: {resultado.motivo}.</div>
+                )}
+                {resultado.status === "ok" && resultado.asistira && resultado.asistira !== "Sí" && (
+                  <div style={{ fontSize: 14, marginTop: 10 }}>
+                    Nota: al inscribirse marcó “{resultado.asistira}”.
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ fontSize: 14, marginTop: 10 }}>
+                {resultado.status === "sin_permiso"
+                  ? "Pide a un Admin que te habilite este puesto de escaneo."
+                  : "El código no corresponde a ninguna inscripción."}
+              </div>
+            )}
+            <p style={{ fontSize: 12, opacity: 0.75, marginTop: 18 }}>Toca para cerrar</p>
+          </div>
         </div>
       )}
 

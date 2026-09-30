@@ -2,7 +2,8 @@ import { requireAdminRole } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { crearUsuario, eliminarUsuario, actualizarRolUsuario, actualizarScanTiposUsuario } from "../actions";
 import ConfirmDelete from "../ConfirmDelete";
-import RolSelector, { ETIQUETAS } from "../RolSelector";
+import RolSelector from "../RolSelector";
+import { ETIQUETAS } from "@/lib/roles";
 import ScanTiposSelector from "../ScanTiposSelector";
 
 export const dynamic = "force-dynamic";

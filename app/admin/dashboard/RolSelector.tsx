@@ -2,15 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-
-type Rol = "ADMIN" | "EDITOR" | "VIEWER" | "ESCANEO";
-
-export const ETIQUETAS: Record<Rol, string> = {
-  ADMIN: "Admin",
-  EDITOR: "Editor",
-  VIEWER: "Solo lectura",
-  ESCANEO: "Solo escaneo",
-};
+import { ETIQUETAS, type Rol } from "@/lib/roles";
 
 // Cambiar el rol de un usuario ya creado, con la misma respuesta inmediata
 // que el estado/modalidad de ponentes. El servidor igual valida que no sea

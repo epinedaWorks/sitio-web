@@ -36,12 +36,12 @@ export default async function DashboardHome({
 
       <h2 style={{ fontSize: "1.1rem", margin: "28px 0 12px", opacity: 0.7 }}>Gestión</h2>
       <div style={grid}>
+        <Card href="/admin/dashboard/inscritos" icon="🎟️" title="Inscritos" value={inscritos} desc="Ver y exportar participantes" />
+        <Card href="/admin/dashboard/checkin" icon="📷" title="Asistencia (ingresaron)" value={ingresaron} desc="Escanear QR el día del evento" />
         <Card href="/admin/dashboard/eventos" icon="📅" title="Eventos" value={eventos} desc="Crear y publicar eventos" />
         <Card href="/admin/dashboard/galeria" icon="🖼️" title="Álbumes de fotos" value={albumes} desc="Subir y ordenar fotos por actividad" />
         <Card href="/admin/dashboard/ponentes" icon="🎤" title="Postulaciones pendientes" value={ponentes} desc="Revisar y aprobar ponentes" />
-        <Card href="/admin/dashboard/inscritos" icon="🎟️" title="Inscritos" value={inscritos} desc="Ver y exportar participantes" />
         <Card href="/admin/dashboard/voluntarios" icon="🙋" title="Voluntarios" value={voluntarios} desc="Ver y exportar postulaciones" />
-        <Card href="/admin/dashboard/checkin" icon="📷" title="Asistencia (ingresaron)" value={ingresaron} desc="Escanear QR el día del evento" />
         <Card href="/admin/dashboard/contacto" icon="✉️" title="Contacto sin atender" value={contacto} desc="Patrocinio, prensa, más información" />
         {esAdmin && (
           <Card

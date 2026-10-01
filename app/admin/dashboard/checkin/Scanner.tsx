@@ -89,7 +89,7 @@ export default function Scanner({ tipos }: { tipos: TipoEscaneo[] }) {
         const data: Resultado = await res.json();
         setResultado(data);
         if (ocultarRef.current) clearTimeout(ocultarRef.current);
-        ocultarRef.current = setTimeout(() => setResultado(null), 5000);
+        ocultarRef.current = setTimeout(() => setResultado(null), 4000);
         if (sonar) beep(data.status === "ok");
         try {
           navigator.vibrate?.(data.status === "ok" ? 60 : [40, 40, 40]);
@@ -267,7 +267,6 @@ export default function Scanner({ tipos }: { tipos: TipoEscaneo[] }) {
           }}
         >
           <div
-            onClick={(e) => e.stopPropagation()}
             style={{
               position: "relative",
               width: "100%",
@@ -281,7 +280,6 @@ export default function Scanner({ tipos }: { tipos: TipoEscaneo[] }) {
               textAlign: "center",
               boxShadow: "0 20px 60px rgba(0,0,0,.45)",
               animation: "ag-scan-pop .18s ease-out",
-              cursor: "default",
             }}
           >
             <button

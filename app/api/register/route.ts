@@ -28,11 +28,10 @@ export async function POST(req: Request) {
 
     const nombre = str(body.nombre);
     const correo = str(body.correo);
-    const asistira = str(body.asistira);
     const rol = str(body.rol);
     const eventSlug = str(body.eventSlug);
 
-    if (!nombre || !correo || !asistira || !rol || !eventSlug) {
+    if (!nombre || !correo || !rol || !eventSlug) {
       return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
     }
     if (!ES_CORREO(correo)) {
@@ -56,7 +55,6 @@ export async function POST(req: Request) {
         nombre,
         correo,
         telefono: str(body.telefono) || null,
-        asistira,
         rol,
         edad: str(body.edad) || null,
         universidad,

@@ -114,7 +114,6 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
           nombre: f.get("nombre"),
           correo: f.get("correo"),
           telefono: f.get("telefono"),
-          asistira: f.get("asistira"),
           rol: f.get("rol"),
           edad: f.get("edad"),
           universidad: f.get("universidad"),
@@ -357,17 +356,6 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
                       aria-hidden="true"
                       style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
                     />
-                    <div className="form-field">
-                      <label htmlFor="i-asistira">¿Asistirás al evento? *</label>
-                      <select id="i-asistira" name="asistira" required defaultValue="">
-                        <option value="" disabled>
-                          Elige una opción
-                        </option>
-                        <option value="Sí">Sí</option>
-                        <option value="No">No</option>
-                        <option value="Tal vez">Tal vez</option>
-                      </select>
-                    </div>
                     <div className="form-field">
                       <label htmlFor="i-nombre">Nombre completo *</label>
                       <input id="i-nombre" name="nombre" required />

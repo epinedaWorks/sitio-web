@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     // Honeypot: campo oculto que solo rellenan los bots. Fingimos éxito.
-    if (str(body.nombre_web)) return NextResponse.json({ ok: true });
+    if (str(body.campo_control)) return NextResponse.json({ ok: true });
 
     const nombre = str(body.nombre);
     const correo = str(body.correo);

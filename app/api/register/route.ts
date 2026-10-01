@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     const body = await req.json();
 
     // Honeypot: campo oculto que solo rellenan los bots. Fingimos éxito.
-    if (str(body.nombre_web)) return NextResponse.json({ ok: true });
+    if (str(body.campo_control)) return NextResponse.json({ ok: true });
 
     // El panel puede cerrar la inscripción (cupo lleno). El modal ya lo avisa
     // sin mostrar el formulario, pero se valida aquí también por si alguien

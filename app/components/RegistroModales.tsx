@@ -110,7 +110,7 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nombre_web: f.get("nombre_web"),
+          campo_control: f.get("campo_control"),
           nombre: f.get("nombre"),
           correo: f.get("correo"),
           telefono: f.get("telefono"),
@@ -149,7 +149,7 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nombre_web: f.get("nombre_web"),
+          campo_control: f.get("campo_control"),
           nombre: f.get("nombre"),
           correo: f.get("correo"),
           telefono: f.get("telefono"),
@@ -197,7 +197,7 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nombre_web: f.get("nombre_web"),
+          campo_control: f.get("campo_control"),
           nombre: f.get("nombre"),
           correo: f.get("correo"),
           telefono: f.get("telefono"),
@@ -234,7 +234,7 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          nombre_web: f.get("nombre_web"),
+          campo_control: f.get("campo_control"),
           nombre: f.get("nombre"),
           correo: f.get("correo"),
           organizacion: f.get("organizacion"),
@@ -350,9 +350,9 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
                   <form className="form-grid" onSubmit={enviarInscripcion}>
                     <input
                       type="text"
-                      name="nombre_web"
+                      name="campo_control"
                       tabIndex={-1}
-                      autoComplete="off"
+                      autoComplete="one-time-code"
                       aria-hidden="true"
                       style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
                     />
@@ -495,9 +495,9 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
                   <form className="form-grid" onSubmit={enviarPonente}>
                     <input
                       type="text"
-                      name="nombre_web"
+                      name="campo_control"
                       tabIndex={-1}
-                      autoComplete="off"
+                      autoComplete="one-time-code"
                       aria-hidden="true"
                       style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
                     />
@@ -704,9 +704,9 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
                   <form className="form-grid" onSubmit={enviarVoluntario}>
                     <input
                       type="text"
-                      name="nombre_web"
+                      name="campo_control"
                       tabIndex={-1}
-                      autoComplete="off"
+                      autoComplete="one-time-code"
                       aria-hidden="true"
                       style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
                     />
@@ -815,9 +815,9 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
                   <form className="form-grid" onSubmit={enviarContacto}>
                     <input
                       type="text"
-                      name="nombre_web"
+                      name="campo_control"
                       tabIndex={-1}
-                      autoComplete="off"
+                      autoComplete="one-time-code"
                       aria-hidden="true"
                       style={{ position: "absolute", left: "-9999px", width: 1, height: 1, opacity: 0 }}
                     />

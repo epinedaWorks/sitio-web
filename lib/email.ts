@@ -22,12 +22,15 @@ function sinConfig() {
 // Nunca lanza: si el correo falla, la inscripción/postulación igual queda guardada.
 // Llamada directa a la API de Resend con charset UTF-8 explícito para que los
 // acentos y emojis no lleguen como "�" en algunos clientes de correo.
+export type Adjunto = { filename: string; url: string };
+
 async function enviar(opts: {
   to: string | string[];
   subject: string;
   html: string;
   replyTo?: string | string[];
   bcc?: string[]; // copia oculta extra para este envío (además de EMAIL_BCC)
+  attachments?: Adjunto[]; // Resend las descarga él mismo desde la URL (no viajan en esta petición)
 }) {
   if (!API_KEY) {
     sinConfig();
@@ -55,6 +58,9 @@ async function enviar(opts: {
         html: opts.html,
         ...(opts.replyTo && opts.replyTo.length ? { reply_to: opts.replyTo } : {}),
         ...(bcc.length ? { bcc } : {}),
+        ...(opts.attachments?.length
+          ? { attachments: opts.attachments.map((a) => ({ filename: a.filename, path: a.url })) }
+          : {}),
       }),
     });
     if (!res.ok) {
@@ -411,7 +417,7 @@ type ResultadoEnvio = { ok: true } | { ok: false; motivo: string };
 async function enviarConReintento(
   correo: string,
   cuerpoHtml: string,
-  opts: { asunto: string; replyTo?: string }
+  opts: { asunto: string; replyTo?: string; attachments?: Adjunto[] }
 ): Promise<ResultadoEnvio> {
   const INTENTOS = 3;
   for (let intento = 1; intento <= INTENTOS; intento++) {
@@ -428,6 +434,9 @@ async function enviarConReintento(
           subject: opts.asunto,
           html: cuerpoHtml,
           ...(opts.replyTo ? { reply_to: opts.replyTo } : {}),
+          ...(opts.attachments?.length
+            ? { attachments: opts.attachments.map((a) => ({ filename: a.filename, path: a.url })) }
+            : {}),
         }),
       });
       if (res.ok) return { ok: true };
@@ -460,21 +469,26 @@ async function enviarConReintento(
 // aun así se topa con uno). Se verifica la respuesta de cada envío
 // individualmente: nada se cuenta como entregado solo porque el lote
 // completo "salió bien".
-export async function enviarAnuncioMasivo(opts: {
+// Envía UN LOTE (lo que el cliente mande — pensado para tandas de ~25, para
+// que un envío grande no tenga que caber entero en una sola función
+// serverless) y devuelve el detalle de cada quien. No manda el resumen al
+// equipo — eso se hace una sola vez al final con enviarResumenAnuncio, desde
+// el navegador, que es quien sabe cuándo ya se mandaron todos los lotes.
+export async function enviarAnuncioLote(opts: {
   destinatarios: DestinatarioAnuncio[];
   asunto: string;
-  mensaje: string; // texto plano; puede usar {{nombre}}; párrafos separados por línea en blanco
-  eventoTitulo: string;
-  remitenteEmail: string;
-}): Promise<{ enviados: number; fallidos: number }> {
+  mensaje: string;
+  adjunto?: Adjunto;
+}): Promise<{ enviados: number; fallidos: { correo: string; motivo: string }[] }> {
   if (!API_KEY) {
     sinConfig();
-    return { enviados: 0, fallidos: opts.destinatarios.length };
+    return { enviados: 0, fallidos: opts.destinatarios.map((d) => ({ correo: d.correo, motivo: "sin configurar" })) };
   }
-  if (opts.destinatarios.length === 0) return { enviados: 0, fallidos: 0 };
+  if (opts.destinatarios.length === 0) return { enviados: 0, fallidos: [] };
 
   const TEAM_LIST = await getCorreosEquipo();
   const html = (nombre: string) => layout(opts.asunto, parrafos(personaliza(opts.mensaje, nombre)));
+  const attachments = opts.adjunto ? [opts.adjunto] : undefined;
 
   let enviados = 0;
   const fallidos: { correo: string; motivo: string }[] = [];
@@ -482,7 +496,9 @@ export async function enviarAnuncioMasivo(opts: {
   for (let i = 0; i < opts.destinatarios.length; i += TANDA) {
     const tanda = opts.destinatarios.slice(i, i + TANDA);
     const resultados = await Promise.all(
-      tanda.map((d) => enviarConReintento(d.correo, html(d.nombre), { asunto: opts.asunto, replyTo: TEAM_LIST[0] }))
+      tanda.map((d) =>
+        enviarConReintento(d.correo, html(d.nombre), { asunto: opts.asunto, replyTo: TEAM_LIST[0], attachments })
+      )
     );
     resultados.forEach((r, idx) => {
       if (r.ok) enviados++;
@@ -491,36 +507,50 @@ export async function enviarAnuncioMasivo(opts: {
     if (i + TANDA < opts.destinatarios.length) await esperar(400); // deja "respirar" el límite por segundo
   }
 
-  // Una sola copia de resumen al equipo (no una por cada destinatario), con
-  // el detalle de a quién se le envió y, si algo falló, por qué —así no hace
-  // falta revisar logs del servidor para saber qué pasó.
-  if (TEAM_LIST.length) {
-    await enviar({
-      to: TEAM_LIST,
-      subject: `Anuncio enviado: ${opts.asunto}`,
-      html: layout(
-        "Se envió un anuncio",
-        `${filas([
-          ["Evento", opts.eventoTitulo],
-          ["Enviado por", opts.remitenteEmail],
-          ["Entregados", String(enviados)],
-          ["Fallidos", fallidos.length ? String(fallidos.length) : null],
-        ])}
-        <p style="font-size:13px;color:#666;margin-top:12px">Enviado a:</p>
-        <p style="font-size:13px;line-height:1.7">${listaLegible(opts.destinatarios)}</p>
-        ${
-          fallidos.length
-            ? `<p style="font-size:13px;color:#c0392b;margin-top:10px">No se pudo entregar a:</p>
-               <p style="font-size:13px;color:#c0392b;line-height:1.7">${esc(
-                 fallidos.map((f) => `${f.correo} (${f.motivo})`).join(", ")
-               )}</p>`
-            : ""
-        }
-        <p style="font-size:13px;color:#666;margin-top:12px">Mensaje enviado:</p>
-        ${parrafos(opts.mensaje)}`
-      ),
-    });
-  }
+  return { enviados, fallidos };
+}
 
-  return { enviados, fallidos: fallidos.length };
+// Una sola copia de resumen al equipo (no una por cada lote ni por cada
+// destinatario), con el detalle de a quién se le envió y, si algo falló, por
+// qué — así no hace falta revisar logs del servidor para saber qué pasó.
+// Se llama una vez, cuando el navegador ya terminó de mandar todos los lotes.
+export async function enviarResumenAnuncio(opts: {
+  destinatarios: DestinatarioAnuncio[];
+  fallidos: { correo: string; motivo: string }[];
+  enviados: number;
+  asunto: string;
+  mensaje: string;
+  eventoTitulo: string;
+  remitenteEmail: string;
+  adjunto?: Adjunto;
+}) {
+  const TEAM_LIST = await getCorreosEquipo();
+  if (!TEAM_LIST.length) return;
+
+  await enviar({
+    to: TEAM_LIST,
+    subject: `Anuncio enviado: ${opts.asunto}`,
+    html: layout(
+      "Se envió un anuncio",
+      `${filas([
+        ["Evento", opts.eventoTitulo],
+        ["Enviado por", opts.remitenteEmail],
+        ["Entregados", String(opts.enviados)],
+        ["Fallidos", opts.fallidos.length ? String(opts.fallidos.length) : null],
+        ["Adjunto", opts.adjunto?.filename || null],
+      ])}
+      <p style="font-size:13px;color:#666;margin-top:12px">Enviado a:</p>
+      <p style="font-size:13px;line-height:1.7">${listaLegible(opts.destinatarios)}</p>
+      ${
+        opts.fallidos.length
+          ? `<p style="font-size:13px;color:#c0392b;margin-top:10px">No se pudo entregar a:</p>
+             <p style="font-size:13px;color:#c0392b;line-height:1.7">${esc(
+               opts.fallidos.map((f) => `${f.correo} (${f.motivo})`).join(", ")
+             )}</p>`
+          : ""
+      }
+      <p style="font-size:13px;color:#666;margin-top:12px">Mensaje enviado:</p>
+      ${parrafos(opts.mensaje)}`
+    ),
+  });
 }

@@ -6,8 +6,6 @@ import bcrypt from "bcryptjs";
 import { getStore } from "@netlify/blobs";
 import { prisma } from "@/lib/prisma";
 import { fechaDesdeInput } from "@/lib/fecha";
-import { enviarAnuncioMasivo, type DestinatarioAnuncio } from "@/lib/email";
-import { ES_CORREO_ANUNCIO, dedupePorCorreo } from "@/lib/anuncios";
 import { requireAdminSession, requireAdminRole, requireEditorSession } from "@/lib/require-admin";
 import { TIPOS_ESCANEO } from "@/lib/scan";
 import {
@@ -415,52 +413,7 @@ export async function eliminarVoluntario(id: string) {
   revalidatePath("/admin/dashboard/voluntarios");
 }
 
-// ---- Anuncios masivos (solo ADMIN): un mensaje a asistentes y/o ponentes ----
-// de un evento. El asunto que se escribe es EXACTAMENTE el que se envía —
-// sin marcas ni modificaciones automáticas, sin importar cuánta gente haya
-// en la lista. La lista de destinatarios es la que se ve y se edita en el
-// formulario (armada a partir de los inscritos/ponentes del evento y
-// ajustable a mano); el servidor la usa tal cual, ya definitiva.
-export async function enviarAnuncio(formData: FormData) {
-  const session = await requireAdminRole();
-
-  const eventId = String(formData.get("eventId") || "");
-  const asunto = String(formData.get("asunto") || "").trim();
-  const mensaje = String(formData.get("mensaje") || "").trim();
-
-  if (!eventId || !asunto || !mensaje) {
-    redirect("/admin/dashboard/anuncios?msg=faltan");
-  }
-
-  const evento = await prisma.event.findUnique({ where: { id: eventId } });
-  if (!evento) redirect("/admin/dashboard/anuncios?msg=error");
-
-  let lista: unknown = [];
-  try {
-    lista = JSON.parse(String(formData.get("destinatariosJson") || "[]"));
-  } catch {
-    lista = [];
-  }
-  const destinatarios: DestinatarioAnuncio[] = dedupePorCorreo(
-    (Array.isArray(lista) ? lista : [])
-      .filter(
-        (d): d is { correo: string; nombre?: string } =>
-          !!d && typeof d.correo === "string" && ES_CORREO_ANUNCIO(d.correo.trim())
-      )
-      .map((d) => ({ correo: d.correo.trim(), nombre: (d.nombre || "").trim() || d.correo.trim() }))
-  );
-
-  if (destinatarios.length === 0) redirect("/admin/dashboard/anuncios?msg=vacio");
-
-  const correoAdmin = session.user?.email || "";
-
-  const { enviados, fallidos } = await enviarAnuncioMasivo({
-    destinatarios,
-    asunto,
-    mensaje,
-    eventoTitulo: evento.title,
-    remitenteEmail: correoAdmin || "el panel",
-  });
-
-  redirect(`/admin/dashboard/anuncios?msg=enviado&n=${enviados}${fallidos ? `&f=${fallidos}` : ""}`);
-}
+// Los anuncios masivos (solo ADMIN) ya no son una server action: el envío
+// real se hace en tandas desde /api/admin/anuncios, llamado directo por
+// AnuncioForm (cliente) — así una lista de cientos de personas no tiene que
+// caber en una sola función serverless. Ver app/api/admin/anuncios/route.ts.

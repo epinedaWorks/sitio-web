@@ -3,6 +3,23 @@
 
 export const EVENT_SLUG = "xpday-2026";
 
+// Redes de la página /siguenos (pantalla para escanear y seguir). Orden a
+// propósito: Instagram y LinkedIn primero, luego el resto.
+export const REDES_SIGUENOS: {
+  id: string;
+  nombre: string;
+  usuario: string;
+  url: string;
+  color: string;
+  icono: string;
+}[] = [
+  { id: "instagram", nombre: "Instagram", usuario: "@pythonguatemala", url: "https://www.instagram.com/pythonguatemala", color: "#E1306C", icono: "📸" },
+  { id: "linkedin", nombre: "LinkedIn", usuario: "Python Guatemala", url: "https://www.linkedin.com/company/python-guatemala/", color: "#0A66C2", icono: "💼" },
+  { id: "facebook", nombre: "Facebook", usuario: "pythonGuatemala", url: "https://www.facebook.com/pythonGuatemala", color: "#1877F2", icono: "👍" },
+  { id: "youtube", nombre: "YouTube", usuario: "@pythonguatemala", url: "https://youtube.com/@pythonguatemala", color: "#FF0000", icono: "▶️" },
+  { id: "github", nombre: "GitHub", usuario: "ComunidadPythonGuatemala", url: "https://github.com/ComunidadPythonGuatemala", color: "#f4eee1", icono: "💻" },
+];
+
 export const SOCIALS = [
   { icon: "📸", label: "Instagram", handle: "@pythonguatemala", href: "https://www.instagram.com/pythonguatemala/" },
   { icon: "👍", label: "Facebook", handle: "Python Guatemala", href: "https://www.facebook.com/pythonGuatemala/" },

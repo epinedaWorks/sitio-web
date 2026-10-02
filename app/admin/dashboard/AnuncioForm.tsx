@@ -52,6 +52,7 @@ export default function AnuncioForm({ eventos }: { eventos: EventoDatos[] }) {
   const [lista, setLista] = useState<Persona[]>([]);
   const [nuevoCorreo, setNuevoCorreo] = useState("");
   const [nuevoNombre, setNuevoNombre] = useState("");
+  const [textoLista, setTextoLista] = useState("");
   const [asunto, setAsunto] = useState("");
   const [mensaje, setMensaje] = useState("");
   const formRef = useRef<HTMLFormElement>(null);
@@ -112,6 +113,35 @@ export default function AnuncioForm({ eventos }: { eventos: EventoDatos[] }) {
     setLista((l) => dedupe([...l, { correo, nombre: nuevoNombre.trim() || correo.split("@")[0] }]));
     setNuevoCorreo("");
     setNuevoNombre("");
+  };
+
+  // Encuentra cualquier correo dentro del texto, sin importar el formato: uno
+  // por línea, separados por coma, pegados de una hoja de cálculo, mezclados
+  // con nombres u otro texto — toma lo que "parezca correo" y descarta lo demás.
+  const correosDetectados = (texto: string): string[] => {
+    const encontrados = texto.match(/[\w.+-]+@[\w-]+\.[\w.-]+/g) || [];
+    return [...new Set(encontrados.map((c) => c.trim().toLowerCase()).filter(ES_CORREO))];
+  };
+  const detectadosEnTexto = correosDetectados(textoLista);
+
+  const agregarVarios = () => {
+    if (detectadosEnTexto.length === 0) return;
+    setLista((l) => dedupe([...l, ...detectadosEnTexto.map((correo) => ({ correo, nombre: correo.split("@")[0] }))]));
+    setTextoLista("");
+  };
+
+  // Subir un .txt/.csv solo rellena el cuadro de texto con su contenido —
+  // así se puede revisar (o seguir pegando más) antes de agregarlos de verdad.
+  const cargarArchivoLista = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const archivo = e.target.files?.[0];
+    e.target.value = "";
+    if (!archivo) return;
+    const lector = new FileReader();
+    lector.onload = () => {
+      const contenido = String(lector.result || "");
+      setTextoLista((prev) => (prev.trim() ? prev + "\n" + contenido : contenido));
+    };
+    lector.readAsText(archivo);
   };
 
   const vaciarLista = () => setLista([]);
@@ -372,6 +402,37 @@ export default function AnuncioForm({ eventos }: { eventos: EventoDatos[] }) {
             + Agregar
           </button>
         </div>
+
+        <div style={{ marginTop: 12, paddingTop: 12, borderTop: "1px dashed #ddd" }}>
+          <label style={{ fontSize: 12, fontWeight: 600, display: "block", marginBottom: 4 }}>
+            O pega/sube una lista completa (un correo por línea, separados por coma, o lo que sea —
+            se detecta automáticamente):
+          </label>
+          <textarea
+            value={textoLista}
+            onChange={(e) => setTextoLista(e.target.value)}
+            rows={3}
+            placeholder={"correo1@ejemplo.com\ncorreo2@ejemplo.com\ncorreo3@ejemplo.com"}
+            style={{ width: "100%", fontSize: 13, padding: 6, fontFamily: "inherit", boxSizing: "border-box" }}
+          />
+          <div style={{ display: "flex", gap: 8, marginTop: 6, alignItems: "center", flexWrap: "wrap" }}>
+            <input
+              type="file"
+              accept=".txt,.csv,text/plain,text/csv"
+              onChange={cargarArchivoLista}
+              style={{ fontSize: 12 }}
+            />
+            <button
+              type="button"
+              onClick={agregarVarios}
+              disabled={detectadosEnTexto.length === 0}
+              style={{ padding: "5px 10px", fontSize: 13 }}
+            >
+              + Agregar {detectadosEnTexto.length > 0 ? `${detectadosEnTexto.length} correo${detectadosEnTexto.length === 1 ? "" : "s"}` : "lista"}
+            </button>
+          </div>
+        </div>
+
         <p style={{ fontSize: 12, opacity: 0.6, marginTop: 8, marginBottom: 0 }}>
           A quien esté aquí le llega el correo. Nada más.
         </p>

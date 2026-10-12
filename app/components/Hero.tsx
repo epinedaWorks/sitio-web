@@ -1,4 +1,4 @@
-export default function Hero() {
+export default function Hero({ eventoTitulo }: { eventoTitulo: string | null }) {
   return (
     <section className="hero" id="inicio">
       <div className="container hero-grid">
@@ -14,7 +14,7 @@ export default function Hero() {
           </p>
           <div className="hero-cta">
             <a className="btn btn-primary js-inscribir" href="#eventos">
-              Inscríbete al Python eXposition Day 2026 →
+              {eventoTitulo ? `Inscríbete a ${eventoTitulo} →` : "Inscríbete →"}
             </a>
             <a className="btn btn-ghost" href="#eventos">
               Ver eventos

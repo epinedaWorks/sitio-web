@@ -47,6 +47,14 @@ export async function getEventoActivoSlug(): Promise<string | null> {
   return getSetting(SETTING_EVENTO_ACTIVO);
 }
 
+// El evento activo completo (no solo el slug) — lo usan la portada pública y
+// el panel para mostrar su nombre/fecha/lugar sin tenerlos escritos en código.
+export async function getEventoActivo() {
+  const slug = await getEventoActivoSlug();
+  if (!slug) return null;
+  return prisma.event.findUnique({ where: { slug } });
+}
+
 // ---- Cupos de los formularios públicos (/admin/dashboard/cupos) ----
 export const SETTING_INSCRIPCION_ABIERTA = "inscripcionAbierta";
 export const SETTING_INSCRIPCION_MENSAJE = "inscripcionMensaje";

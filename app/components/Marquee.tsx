@@ -1,12 +1,12 @@
-const TEXT =
-  "Python Guatemala ✦ Python eXposition Day 2026 ✦ Charlas ✦ Talleres ✦ Exposición de proyectos ✦ Comunidad ✦ Inteligencia Artificial ✦ Ciencia de datos ✦ Automatización ✦ ";
-
-export default function Marquee() {
+export default function Marquee({ eventoTitulo }: { eventoTitulo: string | null }) {
+  const text = `Python Guatemala ✦ ${
+    eventoTitulo ? `${eventoTitulo} ✦ ` : ""
+  }Charlas ✦ Talleres ✦ Exposición de proyectos ✦ Comunidad ✦ Inteligencia Artificial ✦ Ciencia de datos ✦ Automatización ✦ `;
   return (
     <div className="marquee" aria-hidden="true">
       <div className="marquee-track">
-        <span>{TEXT}</span>
-        <span>{TEXT}</span>
+        <span>{text}</span>
+        <span>{text}</span>
       </div>
     </div>
   );

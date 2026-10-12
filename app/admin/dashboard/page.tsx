@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
+import { getEventoActivo } from "@/lib/settings";
 
 export default async function DashboardHome({
   searchParams,
@@ -11,14 +12,22 @@ export default async function DashboardHome({
   const role = (session.user as { role?: string } | undefined)?.role;
   const esAdmin = role === "ADMIN";
 
+  // Los números de inscripción/asistencia/ponentes/voluntarios son del evento
+  // activo, no de todos los eventos juntos — si no, al cambiar de evento se
+  // mezclarían las cifras de ediciones distintas. Los datos de ediciones
+  // pasadas no se borran: siguen completos y se ven desde cada lista
+  // (Inscritos, Ponentes, Voluntarios) eligiendo ese evento en el selector.
+  const eventoActivo = await getEventoActivo();
+  const whereEvento = eventoActivo ? { eventId: eventoActivo.id } : undefined;
+
   const [eventos, ponentes, inscritos, albumes, contacto, ingresaron, voluntarios] = await Promise.all([
     prisma.event.count(),
-    prisma.speakerSubmission.count({ where: { status: "PENDIENTE" } }),
-    prisma.attendeeRegistration.count(),
+    prisma.speakerSubmission.count({ where: { status: "PENDIENTE", ...whereEvento } }),
+    prisma.attendeeRegistration.count({ where: whereEvento }),
     prisma.album.count(),
     prisma.contactMessage.count({ where: { atendido: false } }),
-    prisma.attendeeRegistration.count({ where: { checkedInAt: { not: null } } }),
-    prisma.volunteerApplication.count(),
+    prisma.attendeeRegistration.count({ where: { checkedInAt: { not: null }, ...whereEvento } }),
+    prisma.volunteerApplication.count({ where: whereEvento }),
   ]);
 
   return (
@@ -27,6 +36,23 @@ export default async function DashboardHome({
       <p style={{ opacity: 0.8 }}>
         Sesión: {session.user?.email} · <b>{role === "VIEWER" ? "Solo lectura" : role}</b>
       </p>
+
+      {eventoActivo ? (
+        <p style={{ fontSize: 13, opacity: 0.7, margin: "4px 0 0" }}>
+          Las cifras de abajo son de <strong>{eventoActivo.title}</strong> (el evento activo).{" "}
+          <Link href="/admin/dashboard/eventos" style={{ color: "inherit" }}>
+            Cambiar evento activo →
+          </Link>
+        </p>
+      ) : (
+        <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 13, background: "#fdebd0", color: "#8a5a00", margin: "8px 0 0" }}>
+          No hay ningún evento marcado como activo — las cifras de abajo cuentan TODOS los eventos
+          juntos.{" "}
+          <Link href="/admin/dashboard/eventos" style={{ color: "inherit" }}>
+            Márcalo en Eventos →
+          </Link>
+        </p>
+      )}
 
       {searchParams?.msg === "solo_lectura" && (
         <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, background: "#fdebd0", color: "#8a5a00" }}>

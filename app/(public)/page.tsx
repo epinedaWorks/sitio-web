@@ -8,6 +8,8 @@ import Equipo from "../components/Equipo";
 import Conducta from "../components/Conducta";
 import Unete from "../components/Unete";
 import type { Album } from "../components/Albumes";
+import { getEventoActivo } from "@/lib/settings";
+import { soloFecha, soloHora } from "@/lib/fecha";
 
 // Refresca los álbumes cada hora sin necesidad de redeploy.
 export const revalidate = 3600;
@@ -42,14 +44,23 @@ async function getAlbumes(): Promise<Album[]> {
 }
 
 export default async function HomePage() {
-  const albums = await getAlbumes();
+  const [albums, eventoActivo] = await Promise.all([getAlbumes(), getEventoActivo()]);
+  const evento = eventoActivo
+    ? {
+        title: eventoActivo.title,
+        fechaFull: soloFecha(eventoActivo.date, "full"),
+        horaInicio: soloHora(eventoActivo.date),
+        location: eventoActivo.location,
+        año: eventoActivo.date.getFullYear(),
+      }
+    : null;
 
   return (
     <main>
-      <Hero />
-      <Marquee />
+      <Hero eventoTitulo={evento?.title ?? null} />
+      <Marquee eventoTitulo={evento?.title ?? null} />
       <Comunidad />
-      <Eventos albums={albums} />
+      <Eventos albums={albums} evento={evento} />
       <Apoyanos />
       <Equipo />
       <Conducta />

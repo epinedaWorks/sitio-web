@@ -18,8 +18,11 @@ const RUTA_A_MODO: Record<string, Exclude<Modo, null>> = {
   "/contacto": "contacto",
 };
 
-export default function RegistroModales({ cupos }: { cupos: Cupos }) {
+type EventoActivo = { title: string; fecha: string; location: string } | null;
+
+export default function RegistroModales({ cupos, evento }: { cupos: Cupos; evento: EventoActivo }) {
   const pathname = usePathname();
+  const nombreEvento = evento?.title ?? "nuestro próximo evento";
   const ponenteCerrado = !cupos.charlaAbierta && !cupos.tallerAbierta && !cupos.proyectoAbierta;
   const [modo, setModo] = useState<Modo>(null);
   const [estado, setEstado] = useState<Estado>("idle");
@@ -255,7 +258,7 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
     if (estado === "ok") {
       lanzarToast(
         modo === "inscripcion"
-          ? "¡Inscripción confirmada! Te esperamos en el Python eXposition Day 2026."
+          ? `¡Inscripción confirmada! Te esperamos en ${nombreEvento}.`
           : modo === "ponente"
             ? "¡Propuesta recibida! El equipo core te escribirá pronto."
             : modo === "voluntario"
@@ -285,7 +288,9 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
                 </h3>
                 <p>
                   {modo === "inscripcion"
-                    ? "Te esperamos el sábado 3 de octubre de 2026 en la UVG."
+                    ? evento
+                      ? `Te esperamos el ${evento.fecha}${evento.location ? ` en ${evento.location}` : ""}.`
+                      : "Te avisaremos los detalles a tu correo."
                     : modo === "ponente"
                       ? "El equipo core revisará tu propuesta y te escribirá a tu correo."
                       : modo === "voluntario"
@@ -320,16 +325,16 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
                   <div>
                     <h3>
                       {modo === "inscripcion"
-                        ? "Inscríbete al Python eXposition Day 2026"
+                        ? `Inscríbete a ${nombreEvento}`
                         : modo === "ponente"
-                          ? "Sé parte del Python eXposition Day 2026"
+                          ? `Sé parte de ${nombreEvento}`
                           : modo === "voluntario"
-                            ? "Sé voluntario(a) del Python eXposition Day 2026"
+                            ? `Sé voluntario(a) de ${nombreEvento}`
                             : "Contáctanos"}
                     </h3>
                     <p>
                       {modo === "inscripcion"
-                        ? "Entrada gratuita · cupo limitado · sábado 3 de octubre · UVG"
+                        ? `Entrada gratuita · cupo limitado${evento ? ` · ${evento.fecha} · ${evento.location}` : ""}`
                         : modo === "ponente"
                           ? "Charla, taller o exposición de proyecto. Cuéntanos tu idea."
                           : modo === "voluntario"

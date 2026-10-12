@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
 import Albumes, { type Album } from "@/app/components/Albumes";
-import { EVENT_SLUG } from "@/app/site-data";
+import { getEventoActivoSlug } from "@/lib/settings";
 import { soloFecha } from "@/lib/fecha";
 
 export const revalidate = 3600;
@@ -49,6 +49,7 @@ export default async function EventoDetallePage({
   const e = await getEvento(params.slug);
   if (!e || !e.published) return notFound();
 
+  const eventoActivoSlug = await getEventoActivoSlug();
   const esProximo = e.date.getTime() >= Date.now();
   const albums: Album[] = e.albums
     .map((a) => ({ id: a.id, title: a.title, description: a.description, images: a.images }))
@@ -68,7 +69,7 @@ export default async function EventoDetallePage({
             </p>
             <p style={{ color: "var(--soft)", fontSize: "1.08rem" }}>{e.description}</p>
 
-            {esProximo && e.slug === EVENT_SLUG && (
+            {esProximo && e.slug === eventoActivoSlug && (
               <div className="hero-cta" style={{ marginTop: 24 }}>
                 <a className="btn btn-yellow js-inscribir" href="/inscripcion">
                   Inscríbete como asistente →

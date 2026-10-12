@@ -12,6 +12,9 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const tipo = url.searchParams.get("tipo");
   const formato = url.searchParams.get("formato") === "csv" ? "csv" : "xlsx";
+  // Filtro opcional a un solo evento (lo manda el selector de cada lista de
+  // admin); sin esto, exporta de todos los eventos juntos.
+  const eventoId = url.searchParams.get("eventoId") || undefined;
 
   if (tipo !== "inscritos" && tipo !== "ponentes" && tipo !== "contacto" && tipo !== "voluntarios") {
     return new Response("Parámetro 'tipo' inválido", { status: 400 });
@@ -23,6 +26,7 @@ export async function GET(req: Request) {
 
   if (tipo === "inscritos") {
     const data = await prisma.attendeeRegistration.findMany({
+      where: eventoId ? { eventId: eventoId } : undefined,
       orderBy: { createdAt: "desc" },
       include: { event: true },
     });
@@ -57,6 +61,7 @@ export async function GET(req: Request) {
     ]);
   } else if (tipo === "voluntarios") {
     const data = await prisma.volunteerApplication.findMany({
+      where: eventoId ? { eventId: eventoId } : undefined,
       orderBy: { createdAt: "desc" },
       include: { event: true },
     });
@@ -73,6 +78,7 @@ export async function GET(req: Request) {
     ]);
   } else {
     const data = await prisma.speakerSubmission.findMany({
+      where: eventoId ? { eventId: eventoId } : undefined,
       orderBy: { createdAt: "desc" },
       include: { event: true },
     });

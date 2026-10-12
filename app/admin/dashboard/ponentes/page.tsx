@@ -6,7 +6,9 @@ import EstadoPonenteBotones from "../EstadoPonenteBotones";
 import ModalidadSelector from "../ModalidadSelector";
 import ContactadoToggle from "../ContactadoToggle";
 import AceptarRapido from "../AceptarRapido";
+import SelectorEvento from "../SelectorEvento";
 import { fechaHora } from "@/lib/fecha";
+import { getEventoActivoSlug } from "@/lib/settings";
 
 const MODALIDADES = ["CHARLA", "TALLER", "PROYECTO"] as const;
 const ETIQUETA_MODALIDAD: Record<(typeof MODALIDADES)[number], string> = {
@@ -15,10 +17,21 @@ const ETIQUETA_MODALIDAD: Record<(typeof MODALIDADES)[number], string> = {
   PROYECTO: "Proyectos",
 };
 
-export default async function PonentesAdminPage() {
+export default async function PonentesAdminPage({
+  searchParams,
+}: {
+  searchParams?: { evento?: string };
+}) {
   const session = await requireAdminSession();
   const soloLectura = (session.user as { role?: string } | undefined)?.role === "VIEWER";
+
+  const eventos = await prisma.event.findMany({ orderBy: { date: "desc" }, select: { id: true, slug: true, title: true } });
+  const eventoActivoSlug = await getEventoActivoSlug();
+  const eventoActivoId = eventos.find((e) => e.slug === eventoActivoSlug)?.id;
+  const eventoSel = searchParams?.evento ?? eventoActivoId ?? "todos";
+
   const submissions = await prisma.speakerSubmission.findMany({
+    where: eventoSel !== "todos" ? { eventId: eventoSel } : undefined,
     orderBy: { createdAt: "desc" },
     include: { event: true },
   });
@@ -35,6 +48,9 @@ export default async function PonentesAdminPage() {
   return (
     <main style={{ maxWidth: 1000, margin: "40px auto", fontFamily: "sans-serif" }}>
       <h1>Postulaciones de ponentes</h1>
+      <p style={{ margin: "10px 0" }}>
+        <SelectorEvento eventos={eventos} valor={eventoSel} />
+      </p>
       <p style={{ opacity: 0.7 }}>{submissions.length} en total. Haz clic en una para ver todos los datos.</p>
 
       {soloLectura && (
@@ -95,7 +111,7 @@ export default async function PonentesAdminPage() {
 
       <p style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <a
-          href="/api/admin/export?tipo=ponentes"
+          href={`/api/admin/export?tipo=ponentes${eventoSel !== "todos" ? `&eventoId=${eventoSel}` : ""}`}
           style={{
             display: "inline-block",
             padding: "8px 14px",
@@ -108,7 +124,10 @@ export default async function PonentesAdminPage() {
         >
           ⬇ Descargar Excel
         </a>
-        <a href="/api/admin/export?tipo=ponentes&formato=csv" style={{ fontSize: 13 }}>
+        <a
+          href={`/api/admin/export?tipo=ponentes&formato=csv${eventoSel !== "todos" ? `&eventoId=${eventoSel}` : ""}`}
+          style={{ fontSize: 13 }}
+        >
           o CSV
         </a>
       </p>

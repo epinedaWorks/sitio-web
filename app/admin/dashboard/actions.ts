@@ -18,6 +18,7 @@ import {
   SETTING_TALLER_ABIERTA,
   SETTING_PROYECTO_ABIERTA,
   SETTING_MODALIDAD_MENSAJE,
+  SETTING_EVENTO_ACTIVO,
 } from "@/lib/settings";
 
 const GALLERY_STORE = "gallery";
@@ -204,6 +205,22 @@ export async function editarEvento(id: string, formData: FormData) {
   if (antes && antes.slug !== slug) revalidatePath(`/eventos/${antes.slug}`);
   revalidatePath("/");
   redirect("/admin/dashboard/eventos?msg=guardado");
+}
+
+// Marca este evento como el que reciben los formularios públicos y el
+// check-in (solo puede haber uno activo a la vez).
+export async function marcarEventoActivo(eventId: string) {
+  await requireEditorSession();
+  const e = await prisma.event.findUniqueOrThrow({ where: { id: eventId }, select: { slug: true } });
+  await prisma.setting.upsert({
+    where: { key: SETTING_EVENTO_ACTIVO },
+    create: { key: SETTING_EVENTO_ACTIVO, value: e.slug },
+    update: { value: e.slug },
+  });
+  invalidarSettingsCache();
+  revalidatePath("/admin/dashboard/eventos");
+  revalidatePath("/", "layout");
+  redirect("/admin/dashboard/eventos?msg=activo");
 }
 
 export async function togglePublicado(eventId: string, published: boolean) {

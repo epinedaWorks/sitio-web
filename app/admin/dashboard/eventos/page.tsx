@@ -1,11 +1,13 @@
 import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
-import { crearEvento, togglePublicado, editarEvento } from "../actions";
+import { crearEvento, togglePublicado, editarEvento, marcarEventoActivo } from "../actions";
 import { soloFecha, paraInputDateTime } from "@/lib/fecha";
+import { getEventoActivoSlug } from "@/lib/settings";
 
 const MENSAJES: Record<string, { texto: string; ok: boolean }> = {
   creado: { texto: "Evento creado.", ok: true },
   guardado: { texto: "Cambios guardados.", ok: true },
+  activo: { texto: "Listo, ese es ahora el evento activo: los formularios públicos y el check-in apuntan a él.", ok: true },
   slug: { texto: "Ese slug ya lo usa otro evento. Elige uno distinto.", ok: false },
   faltan: { texto: "Faltan campos obligatorios (título, slug y fecha).", ok: false },
 };
@@ -18,11 +20,16 @@ export default async function EventosAdminPage({
   const session = await requireAdminSession();
   const soloLectura = (session.user as { role?: string } | undefined)?.role === "VIEWER";
   const eventos = await prisma.event.findMany({ orderBy: { date: "desc" } });
+  const eventoActivoSlug = await getEventoActivoSlug();
   const aviso = searchParams?.msg ? MENSAJES[searchParams.msg] : null;
 
   return (
     <main style={{ maxWidth: 900, margin: "40px auto", fontFamily: "sans-serif" }}>
       <h1>Eventos</h1>
+      <p style={{ opacity: 0.7, fontSize: 13, marginTop: -8 }}>
+        El evento marcado como <strong>activo</strong> es al que apuntan la inscripción, las postulaciones de
+        ponentes/voluntarios y el check-in del día del evento. Solo puede haber uno activo a la vez.
+      </p>
 
       {soloLectura && (
         <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, background: "#eee", color: "#555" }}>
@@ -86,6 +93,20 @@ export default async function EventosAdminPage({
                 >
                   {e.published ? "Publicado" : "Borrador"}
                 </span>
+                {e.slug === eventoActivoSlug && (
+                  <span
+                    style={{
+                      fontSize: 12,
+                      padding: "2px 8px",
+                      borderRadius: 999,
+                      background: "#fff3cd",
+                      color: "#8a6500",
+                      fontWeight: 600,
+                    }}
+                  >
+                    ★ Activo
+                  </span>
+                )}
               </summary>
 
               <form
@@ -133,6 +154,11 @@ export default async function EventosAdminPage({
                 >
                   <button type="submit">{e.published ? "Despublicar" : "Publicar ahora"}</button>
                 </form>
+                {e.slug !== eventoActivoSlug && (
+                  <form action={marcarEventoActivo.bind(null, e.id)}>
+                    <button type="submit">★ Marcar como evento activo</button>
+                  </form>
+                )}
                 {e.published && (
                   <a href={`/eventos/${e.slug}`} target="_blank" rel="noopener noreferrer">
                     Ver página pública →

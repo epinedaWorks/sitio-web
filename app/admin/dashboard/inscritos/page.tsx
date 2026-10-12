@@ -3,12 +3,27 @@ import { prisma } from "@/lib/prisma";
 import { eliminarInscrito, toggleCheckin } from "../actions";
 import ConfirmDelete from "../ConfirmDelete";
 import Buscador from "../Buscador";
+import SelectorEvento from "../SelectorEvento";
 import { fechaHora, soloHora } from "@/lib/fecha";
+import { getEventoActivoSlug } from "@/lib/settings";
 
-export default async function InscritosAdminPage() {
+export default async function InscritosAdminPage({
+  searchParams,
+}: {
+  searchParams?: { evento?: string };
+}) {
   const session = await requireAdminSession();
   const soloLectura = (session.user as { role?: string } | undefined)?.role === "VIEWER";
+
+  const eventos = await prisma.event.findMany({ orderBy: { date: "desc" }, select: { id: true, slug: true, title: true } });
+  const eventoActivoSlug = await getEventoActivoSlug();
+  const eventoActivoId = eventos.find((e) => e.slug === eventoActivoSlug)?.id;
+  // Sin filtro explícito en la URL, se muestra el evento activo por defecto
+  // (si hay uno) para no mezclar ediciones pasadas con la actual.
+  const eventoSel = searchParams?.evento ?? eventoActivoId ?? "todos";
+
   const registrations = await prisma.attendeeRegistration.findMany({
+    where: eventoSel !== "todos" ? { eventId: eventoSel } : undefined,
     orderBy: { createdAt: "desc" },
     include: { event: true },
   });
@@ -19,6 +34,9 @@ export default async function InscritosAdminPage() {
   return (
     <main style={{ maxWidth: 900, margin: "40px auto", fontFamily: "sans-serif" }}>
       <h1>Participantes inscritos</h1>
+      <p style={{ margin: "10px 0" }}>
+        <SelectorEvento eventos={eventos} valor={eventoSel} />
+      </p>
       <p style={{ opacity: 0.75 }}>
         Total: {registrations.length} · Ingresaron: {ingresaron} · Autorizan compartir datos:{" "}
         {compartenDatos}
@@ -32,7 +50,7 @@ export default async function InscritosAdminPage() {
 
       <p style={{ display: "flex", alignItems: "center", gap: 12 }}>
         <a
-          href="/api/admin/export?tipo=inscritos"
+          href={`/api/admin/export?tipo=inscritos${eventoSel !== "todos" ? `&eventoId=${eventoSel}` : ""}`}
           style={{
             display: "inline-block",
             padding: "8px 14px",
@@ -45,7 +63,10 @@ export default async function InscritosAdminPage() {
         >
           ⬇ Descargar Excel
         </a>
-        <a href="/api/admin/export?tipo=inscritos&formato=csv" style={{ fontSize: 13 }}>
+        <a
+          href={`/api/admin/export?tipo=inscritos&formato=csv${eventoSel !== "todos" ? `&eventoId=${eventoSel}` : ""}`}
+          style={{ fontSize: 13 }}
+        >
           o CSV
         </a>
       </p>

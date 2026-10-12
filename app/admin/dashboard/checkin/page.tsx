@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { TIPOS_ESCANEO, ETIQUETA_TIPO, CAMPOS_ESCANEO, tiposPermitidos } from "@/lib/scan";
+import { getEventoActivoSlug } from "@/lib/settings";
 import Scanner from "./Scanner";
 
 export const dynamic = "force-dynamic";
@@ -13,10 +14,21 @@ export default async function CheckinPage() {
   const soloEscaneo = rol === "ESCANEO";
   const permitidos = tiposPermitidos(session);
 
+  const eventoActivoSlug = await getEventoActivoSlug();
+  const eventoActivo = eventoActivoSlug
+    ? await prisma.event.findUnique({ where: { slug: eventoActivoSlug }, select: { id: true, title: true } })
+    : null;
+  // Los contadores (y el escaneo por correo, ver /api/admin/checkin) se
+  // limitan al evento activo para no mezclar asistencia de ediciones
+  // distintas si llegara a haber inscritos de más de un evento a la vez.
+  const whereEvento = eventoActivo ? { eventId: eventoActivo.id } : {};
+
   const [total, ...conteos] = await Promise.all([
-    prisma.attendeeRegistration.count(),
+    prisma.attendeeRegistration.count({ where: whereEvento }),
     ...TIPOS_ESCANEO.map((t) =>
-      prisma.attendeeRegistration.count({ where: { [CAMPOS_ESCANEO[t].at]: { not: null } } as any })
+      prisma.attendeeRegistration.count({
+        where: { ...whereEvento, [CAMPOS_ESCANEO[t].at]: { not: null } } as any,
+      })
     ),
   ]);
   const conteo: Record<string, number> = Object.fromEntries(TIPOS_ESCANEO.map((t, i) => [t, conteos[i]]));
@@ -30,6 +42,21 @@ export default async function CheckinPage() {
         almuerzo (requiere ya tener entrada y proyectos) y jornada de la tarde (para quienes se
         quedan después de almuerzo).
       </p>
+
+      {eventoActivo ? (
+        <p style={{ fontSize: 13, opacity: 0.7, margin: "4px 0 14px" }}>
+          Contando solo <strong>{eventoActivo.title}</strong> (el evento activo).
+        </p>
+      ) : (
+        <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 13, background: "#fdebd0", color: "#8a5a00", margin: "4px 0 14px" }}>
+          No hay ningún evento marcado como activo — los contadores de abajo cuentan TODOS los
+          eventos juntos. Márcalo en{" "}
+          <Link href="/admin/dashboard/eventos" style={{ color: "inherit" }}>
+            Eventos
+          </Link>
+          .
+        </p>
+      )}
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         {TIPOS_ESCANEO.map((t) => (

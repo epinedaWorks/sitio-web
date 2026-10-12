@@ -38,6 +38,15 @@ export async function getListaCorreos(key: string, envFallback?: string): Promis
 export const SETTING_TEAM_EMAIL = "teamEmail";
 export const SETTING_EMAIL_BCC = "emailBcc";
 
+// Evento al que apuntan los formularios públicos (inscripción, ponentes,
+// voluntarios) y el check-in — se cambia desde /admin/dashboard/eventos al
+// crear una edición nueva, sin tocar código ni variables de entorno.
+export const SETTING_EVENTO_ACTIVO = "eventoActivo";
+
+export async function getEventoActivoSlug(): Promise<string | null> {
+  return getSetting(SETTING_EVENTO_ACTIVO);
+}
+
 // ---- Cupos de los formularios públicos (/admin/dashboard/cupos) ----
 export const SETTING_INSCRIPCION_ABIERTA = "inscripcionAbierta";
 export const SETTING_INSCRIPCION_MENSAJE = "inscripcionMensaje";

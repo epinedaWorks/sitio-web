@@ -2,6 +2,7 @@ import { requireScanSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { tokenDeQR } from "@/lib/urls";
 import { TIPOS_ESCANEO, CAMPOS_ESCANEO, tiposPermitidos, type TipoEscaneo } from "@/lib/scan";
+import { getEventoActivoSlug } from "@/lib/settings";
 
 // Registra la asistencia de una persona a partir del QR (o de un correo), en
 // uno de los puestos del día: entrada, exposición de proyectos, coffee break,
@@ -24,6 +25,16 @@ export async function POST(req: Request) {
   const codigo = tokenDeQR(String(body.codigo || body.token || ""));
   const correo = String(body.correo || "").trim().toLowerCase();
 
+  // La búsqueda por QR (checkinToken) es inequívoca: el token es único por
+  // persona sin importar el evento. La búsqueda por correo sí puede ser
+  // ambigua si alguien se inscribió a más de un evento — por eso, si hay un
+  // evento activo, se limita a ese; si no hay ninguno marcado, cae al
+  // comportamiento anterior (el registro más reciente con ese correo).
+  const eventoActivoSlug = correo && !codigo ? await getEventoActivoSlug() : null;
+  const eventoActivo = eventoActivoSlug
+    ? await prisma.event.findUnique({ where: { slug: eventoActivoSlug }, select: { id: true } })
+    : null;
+
   const reg = codigo
     ? await prisma.attendeeRegistration.findUnique({
         where: { checkinToken: codigo },
@@ -31,7 +42,10 @@ export async function POST(req: Request) {
       })
     : correo
       ? await prisma.attendeeRegistration.findFirst({
-          where: { correo: { equals: correo, mode: "insensitive" } },
+          where: {
+            correo: { equals: correo, mode: "insensitive" },
+            ...(eventoActivo ? { eventId: eventoActivo.id } : {}),
+          },
           include: { event: true },
           orderBy: { createdAt: "desc" },
         })

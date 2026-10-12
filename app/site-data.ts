@@ -1,7 +1,10 @@
 // Contenido editorial del sitio. Lo dinámico (evento, galería) viene de la base
 // de datos; esto es el texto fijo de las secciones.
-
-export const EVENT_SLUG = "xpday-2026";
+//
+// El evento al que apuntan los formularios públicos ya NO se fija aquí: se
+// marca como "activo" desde /admin/dashboard/eventos (ver SETTING_EVENTO_ACTIVO
+// en lib/settings.ts), así que esta misma página sirve para cualquier edición
+// futura sin tocar código.
 
 // Redes de la página /siguenos (pantalla para escanear y seguir). Orden a
 // propósito: Instagram y LinkedIn primero, luego el resto.

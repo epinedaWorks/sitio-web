@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendVolunteerEmails } from "@/lib/email";
+import { getEventoActivoSlug } from "@/lib/settings";
 
 const DISPONIBILIDAD = ["Mañana", "Todo el día", "Tarde"] as const;
 
@@ -21,15 +22,13 @@ export async function POST(req: Request) {
     const nombre = str(body.nombre);
     const correo = str(body.correo);
     const disponibilidad = str(body.disponibilidad);
-    const eventSlug = str(body.eventSlug);
     const areas = Array.isArray(body.areas) ? body.areas.filter((a: unknown) => typeof a === "string" && a.trim()) : [];
 
     if (
       !nombre ||
       !correo ||
       !DISPONIBILIDAD.includes(disponibilidad as (typeof DISPONIBILIDAD)[number]) ||
-      !areas.length ||
-      !eventSlug
+      !areas.length
     ) {
       return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
     }
@@ -40,6 +39,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Nombre demasiado largo" }, { status: 400 });
     }
 
+    const eventSlug = str(body.eventSlug) || (await getEventoActivoSlug());
+    if (!eventSlug) {
+      return NextResponse.json({ error: "No hay un evento activo en este momento" }, { status: 404 });
+    }
     const event = await prisma.event.findUnique({ where: { slug: eventSlug } });
     if (!event) {
       return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });

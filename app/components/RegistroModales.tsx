@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { usePathname } from "next/navigation";
-import { EVENT_SLUG } from "../site-data";
 import type { Cupos } from "@/lib/settings";
 
 type Modo = null | "inscripcion" | "ponente" | "voluntario" | "contacto";
@@ -123,7 +122,6 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
           comoSeEntero: f.get("comoSeEntero"),
           comentarios: f.get("comentarios"),
           compartirDatos: f.get("compartirDatos") === "on",
-          eventSlug: EVENT_SLUG,
         }),
       });
       if (res.ok) {
@@ -171,7 +169,6 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
           integrantes: f.get("integrantes"),
           necesidades: f.get("necesidades"),
           compartirDatos: f.get("compartirDatos") === "on",
-          eventSlug: EVENT_SLUG,
         }),
       });
       if (res.ok) {
@@ -208,7 +205,6 @@ export default function RegistroModales({ cupos }: { cupos: Cupos }) {
           edad: f.get("edad"),
           areas: f.getAll("areas"),
           comentarios: f.get("comentarios"),
-          eventSlug: EVENT_SLUG,
         }),
       });
       if (res.ok) {

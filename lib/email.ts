@@ -126,9 +126,10 @@ export type DatosInscripcion = {
   checkinToken?: string | null;
 };
 
-export async function sendRegistrationEmails(d: DatosInscripcion) {
+// Correo al participante con su QR de entrada. Se usa tanto al inscribirse
+// como para reenviar la entrada si alguien reporta que no le llegó o no la ve.
+export async function sendTicketEmail(d: DatosInscripcion) {
   const TEAM_LIST = await getCorreosEquipo();
-  // Al participante
   await enviar({
     to: d.correo,
     subject: `Inscripción recibida · ${d.eventoTitulo}`,
@@ -162,6 +163,11 @@ export async function sendRegistrationEmails(d: DatosInscripcion) {
     replyTo: TEAM_LIST[0],
     bcc: TEAM_LIST, // el equipo recibe copia oculta de lo que se le manda a la persona
   });
+}
+
+export async function sendRegistrationEmails(d: DatosInscripcion) {
+  const TEAM_LIST = await getCorreosEquipo();
+  await sendTicketEmail(d);
 
   // Al equipo
   if (TEAM_LIST.length) {
@@ -505,6 +511,66 @@ export async function enviarAnuncioLote(opts: {
       else fallidos.push({ correo: tanda[idx].correo, motivo: r.motivo });
     });
     if (i + TANDA < opts.destinatarios.length) await esperar(400); // deja "respirar" el límite por segundo
+  }
+
+  return { enviados, fallidos };
+}
+
+// ---------- Recordatorio de entrada (a todos los inscritos) ----------
+export type DestinatarioRecordatorio = { correo: string; nombre: string; checkinToken: string | null };
+
+// Igual que enviarAnuncioLote (misma concurrencia/reintento ante el límite de
+// Resend) pero cada quien recibe SU propio QR de entrada, no un mensaje
+// genérico — para recordarle el evento a todos los ya inscritos.
+export async function enviarRecordatoriosEntrada(opts: {
+  destinatarios: DestinatarioRecordatorio[];
+  eventoTitulo: string;
+  fechaLugar: string; // ej. "Sábado 24 de octubre de 2026 · Campus Central UVG"
+}): Promise<{ enviados: number; fallidos: { correo: string; motivo: string }[] }> {
+  if (!API_KEY) {
+    sinConfig();
+    return {
+      enviados: 0,
+      fallidos: opts.destinatarios.map((d) => ({ correo: d.correo, motivo: "sin configurar" })),
+    };
+  }
+  if (opts.destinatarios.length === 0) return { enviados: 0, fallidos: [] };
+
+  const TEAM_LIST = await getCorreosEquipo();
+  const asunto = `Recordatorio: tu entrada · ${opts.eventoTitulo}`;
+  const html = (d: DestinatarioRecordatorio) =>
+    layout(
+      `¡Nos vemos pronto, ${esc(d.nombre.split(" ")[0])}!`,
+      `<p style="font-size:14px;line-height:1.6">Te escribimos para recordarte el <strong>${esc(
+        opts.eventoTitulo
+      )}</strong> — ${esc(opts.fechaLugar)}.</p>
+       ${
+         d.checkinToken
+           ? `<p style="font-size:14px;line-height:1.6;margin-top:16px"><strong>Tu entrada</strong> — muestra este código QR en la entrada del evento:</p>
+              <p style="text-align:center;margin:12px 0"><img src="${qrUrl(
+                d.checkinToken
+              )}" alt="Código QR de tu entrada" width="220" height="220" style="border:6px solid #fff;border-radius:10px" /></p>
+              <p style="text-align:center;font-size:13px"><a href="${entradaUrl(
+                d.checkinToken
+              )}" style="color:#159d68">Abrir mi entrada</a> (guárdala o toma una captura)</p>`
+           : `<p style="font-size:14px;line-height:1.6;margin-top:16px">Si tienes dudas sobre tu inscripción, responde a este correo.</p>`
+       }
+       <p style="font-size:14px;line-height:1.6;margin-top:16px">¡Te esperamos! 🐍</p>`
+    );
+
+  let enviados = 0;
+  const fallidos: { correo: string; motivo: string }[] = [];
+  const TANDA = 5; // misma concurrencia conservadora que enviarAnuncioLote
+  for (let i = 0; i < opts.destinatarios.length; i += TANDA) {
+    const tanda = opts.destinatarios.slice(i, i + TANDA);
+    const resultados = await Promise.all(
+      tanda.map((d) => enviarConReintento(d.correo, html(d), { asunto, replyTo: TEAM_LIST[0] }))
+    );
+    resultados.forEach((r, idx) => {
+      if (r.ok) enviados++;
+      else fallidos.push({ correo: tanda[idx].correo, motivo: r.motivo });
+    });
+    if (i + TANDA < opts.destinatarios.length) await esperar(400);
   }
 
   return { enviados, fallidos };

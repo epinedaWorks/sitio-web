@@ -2,7 +2,13 @@ import { randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendRegistrationEmails } from "@/lib/email";
-import { estaAbierto, getSetting, SETTING_INSCRIPCION_ABIERTA, SETTING_INSCRIPCION_MENSAJE } from "@/lib/settings";
+import {
+  estaAbierto,
+  getSetting,
+  getEventoActivoSlug,
+  SETTING_INSCRIPCION_ABIERTA,
+  SETTING_INSCRIPCION_MENSAJE,
+} from "@/lib/settings";
 
 function str(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
@@ -29,9 +35,8 @@ export async function POST(req: Request) {
     const nombre = str(body.nombre);
     const correo = str(body.correo);
     const rol = str(body.rol);
-    const eventSlug = str(body.eventSlug);
 
-    if (!nombre || !correo || !rol || !eventSlug) {
+    if (!nombre || !correo || !rol) {
       return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
     }
     if (!ES_CORREO(correo)) {
@@ -41,6 +46,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Nombre demasiado largo" }, { status: 400 });
     }
 
+    // El sitio ya no manda un slug fijo: usa el que esté marcado como evento
+    // activo en /admin/dashboard/eventos (permite reutilizar el mismo
+    // formulario para cada edición nueva sin tocar código).
+    const eventSlug = str(body.eventSlug) || (await getEventoActivoSlug());
+    if (!eventSlug) {
+      return NextResponse.json({ error: "No hay un evento activo en este momento" }, { status: 404 });
+    }
     const event = await prisma.event.findUnique({ where: { slug: eventSlug } });
     if (!event) {
       return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });

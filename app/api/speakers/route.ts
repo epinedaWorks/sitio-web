@@ -4,6 +4,7 @@ import { sendSpeakerEmails } from "@/lib/email";
 import {
   estaAbierto,
   getSetting,
+  getEventoActivoSlug,
   SETTING_CHARLA_ABIERTA,
   SETTING_TALLER_ABIERTA,
   SETTING_PROYECTO_ABIERTA,
@@ -42,7 +43,6 @@ export async function POST(req: Request) {
     const bio = str(body.bio);
     const linkedin = str(body.linkedin);
     const sigueComunidad = body.sigueComunidad;
-    const eventSlug = str(body.eventSlug);
 
     // Campos obligatorios (los mismos que marca el formulario de Google)
     if (
@@ -54,8 +54,7 @@ export async function POST(req: Request) {
       !NIVELES.includes(nivel as (typeof NIVELES)[number]) ||
       !bio ||
       !linkedin ||
-      typeof sigueComunidad !== "boolean" ||
-      !eventSlug
+      typeof sigueComunidad !== "boolean"
     ) {
       return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
     }
@@ -84,6 +83,10 @@ export async function POST(req: Request) {
       );
     }
 
+    const eventSlug = str(body.eventSlug) || (await getEventoActivoSlug());
+    if (!eventSlug) {
+      return NextResponse.json({ error: "No hay un evento activo en este momento" }, { status: 404 });
+    }
     const event = await prisma.event.findUnique({ where: { slug: eventSlug } });
     if (!event) {
       return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });

@@ -207,10 +207,14 @@ export async function editarEvento(id: string, formData: FormData) {
   redirect("/admin/dashboard/eventos?msg=guardado");
 }
 
-// Marca este evento como el que reciben los formularios públicos y el
-// check-in (solo puede haber uno activo a la vez).
-export async function marcarEventoActivo(eventId: string) {
-  await requireEditorSession();
+// Marca un evento como el que reciben los formularios públicos, la portada
+// y el check-in (solo puede haber uno activo a la vez). Cambia TODO lo que
+// depende de "el evento actual" de una sola vez, así que solo ADMIN puede
+// tocarlo (no EDITOR ni VIEWER).
+export async function marcarEventoActivo(formData: FormData) {
+  await requireAdminRole();
+  const eventId = String(formData.get("eventId") || "");
+  if (!eventId) redirect("/admin/dashboard/eventos");
   const e = await prisma.event.findUniqueOrThrow({ where: { id: eventId }, select: { slug: true } });
   await prisma.setting.upsert({
     where: { key: SETTING_EVENTO_ACTIVO },

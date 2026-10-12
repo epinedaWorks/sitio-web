@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { crearEvento, togglePublicado, editarEvento, marcarEventoActivo } from "../actions";
 import { soloFecha, paraInputDateTime } from "@/lib/fecha";
 import { getEventoActivoSlug } from "@/lib/settings";
+import SelectorEventoActivo from "../SelectorEventoActivo";
 
 const MENSAJES: Record<string, { texto: string; ok: boolean }> = {
   creado: { texto: "Evento creado.", ok: true },
@@ -18,18 +19,40 @@ export default async function EventosAdminPage({
   searchParams?: { msg?: string };
 }) {
   const session = await requireAdminSession();
-  const soloLectura = (session.user as { role?: string } | undefined)?.role === "VIEWER";
+  const rol = (session.user as { role?: string } | undefined)?.role;
+  const soloLectura = rol === "VIEWER";
+  const esAdmin = rol === "ADMIN";
   const eventos = await prisma.event.findMany({ orderBy: { date: "desc" } });
   const eventoActivoSlug = await getEventoActivoSlug();
+  const eventoActivoId = eventos.find((e) => e.slug === eventoActivoSlug)?.id;
   const aviso = searchParams?.msg ? MENSAJES[searchParams.msg] : null;
 
   return (
     <main style={{ maxWidth: 900, margin: "40px auto", fontFamily: "sans-serif" }}>
       <h1>Eventos</h1>
       <p style={{ opacity: 0.7, fontSize: 13, marginTop: -8 }}>
-        El evento marcado como <strong>activo</strong> es al que apuntan la inscripción, las postulaciones de
-        ponentes/voluntarios y el check-in del día del evento. Solo puede haber uno activo a la vez.
+        El evento marcado como <strong>activo</strong> es al que apuntan la portada, la inscripción, las
+        postulaciones de ponentes/voluntarios, el check-in y las estadísticas del panel. Solo puede haber
+        uno activo a la vez, y cambiarlo actualiza todo eso de inmediato.
       </p>
+
+      {esAdmin ? (
+        <div
+          style={{
+            background: "#fff8e1",
+            border: "1px solid #ffe29a",
+            borderRadius: 10,
+            padding: "12px 16px",
+            margin: "16px 0 24px",
+          }}
+        >
+          <SelectorEventoActivo eventos={eventos} activoId={eventoActivoId} action={marcarEventoActivo} />
+        </div>
+      ) : (
+        <p style={{ fontSize: 13, opacity: 0.7, margin: "8px 0 24px" }}>
+          Solo una cuenta ADMIN puede cambiar el evento activo.
+        </p>
+      )}
 
       {soloLectura && (
         <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, background: "#eee", color: "#555" }}>
@@ -154,11 +177,6 @@ export default async function EventosAdminPage({
                 >
                   <button type="submit">{e.published ? "Despublicar" : "Publicar ahora"}</button>
                 </form>
-                {e.slug !== eventoActivoSlug && (
-                  <form action={marcarEventoActivo.bind(null, e.id)}>
-                    <button type="submit">★ Marcar como evento activo</button>
-                  </form>
-                )}
                 {e.published && (
                   <a href={`/eventos/${e.slug}`} target="_blank" rel="noopener noreferrer">
                     Ver página pública →

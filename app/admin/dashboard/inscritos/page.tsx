@@ -4,8 +4,11 @@ import { eliminarInscrito, toggleCheckin } from "../actions";
 import ConfirmDelete from "../ConfirmDelete";
 import Buscador from "../Buscador";
 import SelectorEvento from "../SelectorEvento";
-import { fechaHora, soloHora } from "@/lib/fecha";
+import FilaExpandible from "../FilaExpandible";
+import { fechaHora, soloFecha } from "@/lib/fecha";
 import { getEventoActivoSlug } from "@/lib/settings";
+
+const COLSPAN = 9;
 
 export default async function InscritosAdminPage({
   searchParams,
@@ -18,8 +21,6 @@ export default async function InscritosAdminPage({
   const eventos = await prisma.event.findMany({ orderBy: { date: "desc" }, select: { id: true, slug: true, title: true } });
   const eventoActivoSlug = await getEventoActivoSlug();
   const eventoActivoId = eventos.find((e) => e.slug === eventoActivoSlug)?.id;
-  // Sin filtro explícito en la URL, se muestra el evento activo por defecto
-  // (si hay uno) para no mezclar ediciones pasadas con la actual.
   const eventoSel = searchParams?.evento ?? eventoActivoId ?? "todos";
 
   const registrations = await prisma.attendeeRegistration.findMany({
@@ -32,136 +33,164 @@ export default async function InscritosAdminPage({
   const ingresaron = registrations.filter((r) => r.checkedInAt).length;
 
   return (
-    <main style={{ maxWidth: 900, margin: "40px auto", fontFamily: "sans-serif" }}>
-      <h1>Participantes inscritos</h1>
-      <p style={{ margin: "10px 0" }}>
+    <main>
+      <div className="pg-head">
+        <h1>Inscritos</h1>
+        <p>Participantes inscritos a través del formulario público.</p>
+      </div>
+
+      <div className="pg-head-row" style={{ marginBottom: 16 }}>
         <SelectorEvento eventos={eventos} valor={eventoSel} />
-      </p>
-      <p style={{ opacity: 0.75 }}>
-        Total: {registrations.length} · Ingresaron: {ingresaron} · Autorizan compartir datos:{" "}
-        {compartenDatos}
-      </p>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <a
+            className="pg-btn pg-btn-primary pg-btn-sm"
+            href={`/api/admin/export?tipo=inscritos${eventoSel !== "todos" ? `&eventoId=${eventoSel}` : ""}`}
+          >
+            ⬇ Excel
+          </a>
+          <a
+            className="pg-btn pg-btn-ghost pg-btn-sm"
+            href={`/api/admin/export?tipo=inscritos&formato=csv${eventoSel !== "todos" ? `&eventoId=${eventoSel}` : ""}`}
+          >
+            CSV
+          </a>
+        </div>
+      </div>
+
+      <div className="pg-stats" style={{ marginBottom: 18 }}>
+        <div className="pg-stat">
+          <span className="n">{registrations.length}</span>
+          <span className="l">Total</span>
+        </div>
+        <div className="pg-stat">
+          <span className="n">{ingresaron}</span>
+          <span className="l">Ingresaron</span>
+        </div>
+        <div className="pg-stat">
+          <span className="n">{compartenDatos}</span>
+          <span className="l">Autorizan compartir datos</span>
+        </div>
+      </div>
 
       {soloLectura && (
-        <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, background: "#eee", color: "#555" }}>
+        <p className="pg-notice pg-notice-info">
           Estás en modo solo lectura: puedes ver y exportar, pero no marcar asistencia ni borrar nada.
         </p>
       )}
 
-      <p style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <a
-          href={`/api/admin/export?tipo=inscritos${eventoSel !== "todos" ? `&eventoId=${eventoSel}` : ""}`}
-          style={{
-            display: "inline-block",
-            padding: "8px 14px",
-            background: "#159d68",
-            color: "#fff",
-            borderRadius: 8,
-            textDecoration: "none",
-            fontWeight: 600,
-          }}
-        >
-          ⬇ Descargar Excel
-        </a>
-        <a
-          href={`/api/admin/export?tipo=inscritos&formato=csv${eventoSel !== "todos" ? `&eventoId=${eventoSel}` : ""}`}
-          style={{ fontSize: 13 }}
-        >
-          o CSV
-        </a>
-      </p>
-
-      {registrations.length === 0 && <p>Aún no hay inscritos.</p>}
-
-      {registrations.length > 0 && (
-        <Buscador selector="[data-buscar]" placeholder="Buscar por nombre, correo, teléfono o rol…" />
+      {registrations.length === 0 ? (
+        <p className="pg-card" style={{ opacity: 0.7 }}>
+          Aún no hay inscritos.
+        </p>
+      ) : (
+        <>
+          <Buscador selector="[data-buscar]" placeholder="Buscar por nombre, correo, teléfono o rol…" />
+          <div className="pg-table-wrap">
+            <table className="pg-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Nombre</th>
+                  <th>Rol</th>
+                  <th>Universidad</th>
+                  <th>Edad</th>
+                  <th>Inscrito</th>
+                  <th>Entrada</th>
+                  <th>Comparte datos</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {registrations.map((r) => (
+                  <FilaExpandible
+                    key={r.id}
+                    colSpan={COLSPAN}
+                    destacada={!!r.checkedInAt}
+                    buscar={[r.nombre, r.correo, r.telefono, r.rol, r.universidad, r.event.title]
+                      .filter(Boolean)
+                      .join(" ")
+                      .toLowerCase()}
+                    resumen={
+                      <>
+                        <td>
+                          <div style={{ fontWeight: 600 }}>{r.nombre}</div>
+                          <div style={{ opacity: 0.6, fontSize: 12 }}>{r.correo}</div>
+                        </td>
+                        <td>{r.rol || "—"}</td>
+                        <td>{r.universidad || "No aplica"}</td>
+                        <td>{r.edad || "—"}</td>
+                        <td style={{ whiteSpace: "nowrap" }}>{soloFecha(r.createdAt)}</td>
+                        <td>
+                          {r.checkedInAt ? (
+                            <span className="pg-badge pg-badge-success">✓ ingresó</span>
+                          ) : (
+                            <span className="pg-badge pg-badge-neutral">—</span>
+                          )}
+                        </td>
+                        <td>
+                          {r.compartirDatos ? (
+                            <span className="pg-badge pg-badge-success">Sí</span>
+                          ) : (
+                            <span className="pg-badge pg-badge-neutral">No</span>
+                          )}
+                        </td>
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          {!soloLectura && (
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <form
+                                action={async () => {
+                                  "use server";
+                                  await toggleCheckin(r.id);
+                                }}
+                              >
+                                <button type="submit" className="pg-btn pg-btn-ghost pg-btn-sm">
+                                  {r.checkedInAt ? "Quitar" : "Marcar"}
+                                </button>
+                              </form>
+                              <ConfirmDelete
+                                compact
+                                mensaje={`¿Borrar la inscripción de ${r.nombre}? Esta acción no se puede deshacer.`}
+                                action={async () => {
+                                  "use server";
+                                  await eliminarInscrito(r.id);
+                                }}
+                              />
+                            </div>
+                          )}
+                        </td>
+                      </>
+                    }
+                    detalle={
+                      <dl style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: "4px 12px", margin: 0, fontSize: 13.5 }}>
+                        <Field k="¿Asistirá?" v={r.asistira} />
+                        <Field k="Correo" v={r.correo} />
+                        <Field k="Teléfono" v={r.telefono} />
+                        <Field k="Semestre" v={r.semestre} />
+                        <Field k="Experiencia con Python" v={r.experiencia} />
+                        <Field k="Años de experiencia en tecnología" v={r.aniosExperiencia} />
+                        <Field k="¿Cómo se enteró?" v={r.comoSeEntero} />
+                        <Field k="Comentarios" v={r.comentarios} pre />
+                        <Field k="Evento" v={r.event.title} />
+                        <Field k="Fecha de inscripción" v={fechaHora(r.createdAt)} />
+                        <Field k="Entrada" v={r.checkedInAt ? `Ingresó ${fechaHora(r.checkedInAt)}` : "No ha ingresado"} />
+                        <Field
+                          k="Exposición de proyectos"
+                          v={r.proyectosAt ? `Pasó ${fechaHora(r.proyectosAt)}` : "No ha pasado"}
+                        />
+                        <Field k="Coffee break" v={r.coffeeAt ? `Pasó ${fechaHora(r.coffeeAt)}` : "No ha pasado"} />
+                        <Field
+                          k="Almuerzo"
+                          v={r.almuerzoAt ? `Se le dio ${fechaHora(r.almuerzoAt)}` : "No se le ha dado"}
+                        />
+                      </dl>
+                    }
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
       )}
-
-      {registrations.map((r) => (
-        <div
-          key={r.id}
-          data-buscar={[r.nombre, r.correo, r.telefono, r.rol, r.universidad, r.event.title]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase()}
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 8,
-            border: "1px solid #ddd",
-            borderRadius: 10,
-            padding: "10px 12px",
-            marginBottom: 10,
-            background: "#fff",
-          }}
-        >
-          <details style={{ flex: 1, minWidth: 0 }}>
-            <summary style={{ cursor: "pointer", fontWeight: 600 }}>
-              {r.nombre} · <span style={{ opacity: 0.7 }}>{r.correo}</span> · {r.asistira || "—"}
-              {r.checkedInAt && (
-                <span style={{ fontSize: 12, marginLeft: 8, padding: "2px 8px", borderRadius: 999, background: "#159d68", color: "#fff" }}>
-                  ✓ ingresó {soloHora(r.checkedInAt)}
-                </span>
-              )}
-              {r.compartirDatos && (
-                <span style={{ fontSize: 12, marginLeft: 8, padding: "2px 8px", borderRadius: 999, background: "#d5f5e3", color: "#1b5e20" }}>
-                  comparte datos
-                </span>
-              )}
-            </summary>
-            <dl style={{ display: "grid", gridTemplateColumns: "200px 1fr", gap: "4px 12px", margin: "12px 0", fontSize: 14 }}>
-              <Field k="¿Asistirá?" v={r.asistira} />
-              <Field k="Correo" v={r.correo} />
-              <Field k="Teléfono" v={r.telefono} />
-              <Field k="Rol actual" v={r.rol} />
-              <Field k="Edad" v={r.edad} />
-              <Field k="Universidad" v={r.universidad || "No aplica"} />
-              <Field k="Semestre" v={r.semestre} />
-              <Field k="Experiencia con Python" v={r.experiencia} />
-              <Field k="Años de experiencia en tecnología" v={r.aniosExperiencia} />
-              <Field k="¿Cómo se enteró?" v={r.comoSeEntero} />
-              <Field k="Comentarios" v={r.comentarios} pre />
-              <Field k="Autoriza compartir datos con empresas" v={r.compartirDatos ? "Sí" : "No"} />
-              <Field k="Evento" v={r.event.title} />
-              <Field k="Fecha de inscripción" v={fechaHora(r.createdAt)} />
-              <Field
-                k="Entrada"
-                v={r.checkedInAt ? `Ingresó ${fechaHora(r.checkedInAt)}` : "No ha ingresado"}
-              />
-              <Field
-                k="Exposición de proyectos"
-                v={r.proyectosAt ? `Pasó ${fechaHora(r.proyectosAt)}` : "No ha pasado"}
-              />
-              <Field
-                k="Coffee break"
-                v={r.coffeeAt ? `Pasó ${fechaHora(r.coffeeAt)}` : "No ha pasado"}
-              />
-              <Field
-                k="Almuerzo"
-                v={r.almuerzoAt ? `Se le dio ${fechaHora(r.almuerzoAt)}` : "No se le ha dado"}
-              />
-            </dl>
-            <form
-              action={async () => {
-                "use server";
-                await toggleCheckin(r.id);
-              }}
-            >
-              <button type="submit">
-                {r.checkedInAt ? "Quitar asistencia" : "Marcar asistencia"}
-              </button>
-            </form>
-          </details>
-          <ConfirmDelete
-            compact
-            mensaje={`¿Borrar la inscripción de ${r.nombre}? Esta acción no se puede deshacer.`}
-            action={async () => {
-              "use server";
-              await eliminarInscrito(r.id);
-            }}
-          />
-        </div>
-      ))}
     </main>
   );
 }

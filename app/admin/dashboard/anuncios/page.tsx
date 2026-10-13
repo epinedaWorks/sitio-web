@@ -32,17 +32,19 @@ export default async function AnunciosPage() {
   }));
 
   return (
-    <main style={{ maxWidth: 720, margin: "40px auto", fontFamily: "sans-serif", padding: "0 16px" }}>
-      <h1>Anuncios</h1>
-      <p style={{ opacity: 0.75, fontSize: 14 }}>
-        Manda un correo a los asistentes inscritos y/o a los conferencistas, talleristas y expositores de
-        un evento — a estos últimos puedes filtrarlos por modalidad (charla, taller o proyecto) y por
-        estado, ya que cada modalidad suele recibir información distinta. Puedes revisar la lista de
-        correos y quitar o agregar alguno antes de enviar. El asunto y el mensaje se mandan exactamente
-        como los escribas, sin nada agregado. Cada quien recibe su propio correo — nadie ve la lista de
-        los demás. Para listas grandes, el envío se hace en tandas desde esta misma pantalla: no la
-        cierres hasta que termine.
-      </p>
+    <main className="pg-content-narrow">
+      <div className="pg-head">
+        <h1>Anuncios</h1>
+        <p>
+          Manda un correo a los asistentes inscritos y/o a los conferencistas, talleristas y expositores de
+          un evento — a estos últimos puedes filtrarlos por modalidad (charla, taller o proyecto) y por
+          estado, ya que cada modalidad suele recibir información distinta. Puedes revisar la lista de
+          correos y quitar o agregar alguno antes de enviar. El asunto y el mensaje se mandan exactamente
+          como los escribas, sin nada agregado. Cada quien recibe su propio correo — nadie ve la lista de
+          los demás. Para listas grandes, el envío se hace en tandas desde esta misma pantalla: no la
+          cierres hasta que termine.
+        </p>
+      </div>
 
       <AnuncioForm eventos={datos} />
     </main>

@@ -3,8 +3,12 @@ import { prisma } from "@/lib/prisma";
 import { eliminarVoluntario } from "../actions";
 import ConfirmDelete from "../ConfirmDelete";
 import SelectorEvento from "../SelectorEvento";
-import { fechaHora } from "@/lib/fecha";
+import FilaExpandible from "../FilaExpandible";
+import Buscador from "../Buscador";
+import { fechaHora, soloFecha } from "@/lib/fecha";
 import { getEventoActivoSlug } from "@/lib/settings";
+
+const COLSPAN = 7;
 
 export default async function VoluntariosAdminPage({
   searchParams,
@@ -26,90 +30,111 @@ export default async function VoluntariosAdminPage({
   });
 
   return (
-    <main style={{ maxWidth: 900, margin: "40px auto", fontFamily: "sans-serif" }}>
-      <h1>Postulaciones de voluntarios</h1>
-      <p style={{ margin: "10px 0" }}>
+    <main>
+      <div className="pg-head">
+        <h1>Voluntarios</h1>
+        <p>Postulaciones para apoyar el día del evento.</p>
+      </div>
+
+      <div className="pg-head-row" style={{ marginBottom: 16 }}>
         <SelectorEvento eventos={eventos} valor={eventoSel} />
-      </p>
-      <p style={{ opacity: 0.75 }}>Total: {voluntarios.length}</p>
+        <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+          <a
+            className="pg-btn pg-btn-primary pg-btn-sm"
+            href={`/api/admin/export?tipo=voluntarios${eventoSel !== "todos" ? `&eventoId=${eventoSel}` : ""}`}
+          >
+            ⬇ Excel
+          </a>
+          <a
+            className="pg-btn pg-btn-ghost pg-btn-sm"
+            href={`/api/admin/export?tipo=voluntarios&formato=csv${eventoSel !== "todos" ? `&eventoId=${eventoSel}` : ""}`}
+          >
+            CSV
+          </a>
+        </div>
+      </div>
+
+      <div className="pg-stats" style={{ marginBottom: 18 }}>
+        <div className="pg-stat">
+          <span className="n">{voluntarios.length}</span>
+          <span className="l">Total</span>
+        </div>
+      </div>
 
       {soloLectura && (
-        <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, background: "#eee", color: "#555" }}>
+        <p className="pg-notice pg-notice-info">
           Estás en modo solo lectura: puedes ver y exportar, pero no borrar nada.
         </p>
       )}
 
-      <p style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <a
-          href={`/api/admin/export?tipo=voluntarios${eventoSel !== "todos" ? `&eventoId=${eventoSel}` : ""}`}
-          style={{
-            display: "inline-block",
-            padding: "8px 14px",
-            background: "#159d68",
-            color: "#fff",
-            borderRadius: 8,
-            textDecoration: "none",
-            fontWeight: 600,
-          }}
-        >
-          ⬇ Descargar Excel
-        </a>
-        <a
-          href={`/api/admin/export?tipo=voluntarios&formato=csv${eventoSel !== "todos" ? `&eventoId=${eventoSel}` : ""}`}
-          style={{ fontSize: 13 }}
-        >
-          o CSV
-        </a>
-      </p>
-
-      {voluntarios.length === 0 && <p>Aún no hay postulaciones.</p>}
-
-      {voluntarios.map((v) => (
-        <div
-          key={v.id}
-          style={{
-            display: "flex",
-            alignItems: "flex-start",
-            gap: 8,
-            border: "1px solid #ddd",
-            borderRadius: 10,
-            padding: "10px 12px",
-            marginBottom: 10,
-            background: "#fff",
-          }}
-        >
-          <details style={{ flex: 1, minWidth: 0 }}>
-            <summary style={{ cursor: "pointer", fontWeight: 600 }}>
-              {v.nombre} · <span style={{ opacity: 0.7 }}>{v.correo}</span> ·{" "}
-              <span style={{ opacity: 0.7 }}>{v.disponibilidad}</span>
-              {v.areas.length > 0 && (
-                <span style={{ opacity: 0.7 }}> · {v.areas.join(", ")}</span>
-              )}
-            </summary>
-            <dl style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: "4px 12px", margin: "12px 0", fontSize: 14 }}>
-              <Field k="Correo" v={v.correo} />
-              <Field k="Teléfono" v={v.telefono} />
-              <Field k="Disponibilidad" v={v.disponibilidad} />
-              <Field k="Universidad" v={v.universidad || "No aplica"} />
-              <Field k="Carné" v={v.carnet} />
-              <Field k="Semestre" v={v.semestre} />
-              <Field k="Rango de edad" v={v.edad} />
-              <Field k="Áreas de interés" v={v.areas.join(", ")} />
-              <Field k="Comentarios" v={v.comentarios} pre />
-              <Field k="Evento" v={v.event.title} />
-              <Field k="Fecha de postulación" v={fechaHora(v.createdAt)} />
-            </dl>
-          </details>
-          <ConfirmDelete
-            compact
-            mensaje={`¿Borrar la postulación de voluntario de ${v.nombre}? Esta acción no se puede deshacer.`}
-            action={async () => {
-              "use server";
-              await eliminarVoluntario(v.id);
-            }}
-          />
-        </div>
-      ))}
+      {voluntarios.length === 0 ? (
+        <p className="pg-card" style={{ opacity: 0.7 }}>
+          Aún no hay postulaciones.
+        </p>
+      ) : (
+        <>
+          <Buscador selector="[data-buscar]" placeholder="Buscar por nombre, correo o disponibilidad…" />
+          <div className="pg-table-wrap">
+            <table className="pg-table">
+              <thead>
+                <tr>
+                  <th></th>
+                  <th>Nombre</th>
+                  <th>Disponibilidad</th>
+                  <th>Universidad</th>
+                  <th>Áreas de interés</th>
+                  <th>Postulado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {voluntarios.map((v) => (
+                  <FilaExpandible
+                    key={v.id}
+                    colSpan={COLSPAN}
+                    buscar={[v.nombre, v.correo, v.disponibilidad, v.universidad].filter(Boolean).join(" ").toLowerCase()}
+                    resumen={
+                      <>
+                        <td>
+                          <div style={{ fontWeight: 600 }}>{v.nombre}</div>
+                          <div style={{ opacity: 0.6, fontSize: 12 }}>{v.correo}</div>
+                        </td>
+                        <td>{v.disponibilidad}</td>
+                        <td>{v.universidad || "No aplica"}</td>
+                        <td>{v.areas.join(", ") || "—"}</td>
+                        <td style={{ whiteSpace: "nowrap" }}>{soloFecha(v.createdAt)}</td>
+                        <td style={{ whiteSpace: "nowrap" }}>
+                          {!soloLectura && (
+                            <ConfirmDelete
+                              compact
+                              mensaje={`¿Borrar la postulación de voluntario de ${v.nombre}? Esta acción no se puede deshacer.`}
+                              action={async () => {
+                                "use server";
+                                await eliminarVoluntario(v.id);
+                              }}
+                            />
+                          )}
+                        </td>
+                      </>
+                    }
+                    detalle={
+                      <dl style={{ display: "grid", gridTemplateColumns: "180px 1fr", gap: "4px 12px", margin: 0, fontSize: 13.5 }}>
+                        <Field k="Teléfono" v={v.telefono} />
+                        <Field k="Carné" v={v.carnet} />
+                        <Field k="Semestre" v={v.semestre} />
+                        <Field k="Rango de edad" v={v.edad} />
+                        <Field k="Comentarios" v={v.comentarios} pre />
+                        <Field k="Evento" v={v.event.title} />
+                        <Field k="Fecha de postulación" v={fechaHora(v.createdAt)} />
+                      </dl>
+                    }
+                  />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
     </main>
   );
 }

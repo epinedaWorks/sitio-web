@@ -11,72 +11,61 @@ export default async function ContactoAdminPage() {
   const pendientes = mensajes.filter((m) => !m.atendido).length;
 
   return (
-    <main style={{ maxWidth: 900, margin: "40px auto", fontFamily: "sans-serif" }}>
-      <h1>Mensajes de contacto</h1>
-      <p style={{ opacity: 0.75 }}>
-        {mensajes.length} en total · {pendientes} sin atender
-      </p>
+    <main className="pg-content-narrow">
+      <div className="pg-head">
+        <h1>Contacto</h1>
+        <p>Mensajes recibidos desde el formulario de contacto del sitio.</p>
+      </div>
+
+      <div className="pg-stats" style={{ marginBottom: 18 }}>
+        <div className="pg-stat">
+          <span className="n">{mensajes.length}</span>
+          <span className="l">Total</span>
+        </div>
+        <div className="pg-stat">
+          <span className="n">{pendientes}</span>
+          <span className="l">Sin atender</span>
+        </div>
+      </div>
 
       {soloLectura && (
-        <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, background: "#eee", color: "#555" }}>
+        <p className="pg-notice pg-notice-info">
           Estás en modo solo lectura: puedes ver todo, pero no marcar como atendido ni borrar nada.
         </p>
       )}
 
-      <p style={{ display: "flex", alignItems: "center", gap: 12 }}>
-        <a
-          href="/api/admin/export?tipo=contacto"
-          style={{
-            display: "inline-block",
-            padding: "8px 14px",
-            background: "#159d68",
-            color: "#fff",
-            borderRadius: 8,
-            textDecoration: "none",
-            fontWeight: 600,
-          }}
-        >
-          ⬇ Descargar Excel
+      <p style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16 }}>
+        <a className="pg-btn pg-btn-primary pg-btn-sm" href="/api/admin/export?tipo=contacto">
+          ⬇ Excel
         </a>
-        <a href="/api/admin/export?tipo=contacto&formato=csv" style={{ fontSize: 13 }}>
-          o CSV
+        <a className="pg-btn pg-btn-ghost pg-btn-sm" href="/api/admin/export?tipo=contacto&formato=csv">
+          CSV
         </a>
       </p>
 
-      {mensajes.length === 0 && <p>Aún no hay mensajes.</p>}
+      {mensajes.length === 0 && (
+        <p className="pg-card" style={{ opacity: 0.7 }}>
+          Aún no hay mensajes.
+        </p>
+      )}
 
       {mensajes.map((m) => (
         <div
           key={m.id}
+          className="pg-card"
           style={{
             display: "flex",
             alignItems: "flex-start",
             gap: 8,
-            border: "1px solid #ddd",
-            borderRadius: 10,
-            padding: "10px 12px",
             marginBottom: 10,
-            background: m.atendido ? "#f3f3f3" : "#fff",
+            background: m.atendido ? "#faf9f5" : "#fff",
           }}
         >
           <details style={{ flex: 1, minWidth: 0 }}>
             <summary style={{ cursor: "pointer", fontWeight: 600 }}>
-              {m.nombre} · <span style={{ opacity: 0.7 }}>{m.correo}</span>
-              {"  "}
-              <span
-                style={{
-                  fontSize: 12,
-                  padding: "2px 8px",
-                  borderRadius: 999,
-                  background: "#fdebd0",
-                  color: "#8a5a00",
-                }}
-              >
-                {m.asunto}
-              </span>
-              {m.atendido && (
-                <span style={{ fontSize: 12, marginLeft: 6, opacity: 0.6 }}>· atendido</span>
-              )}
+              {m.nombre} · <span style={{ opacity: 0.7, fontWeight: 400 }}>{m.correo}</span>{" "}
+              <span className="pg-badge pg-badge-warn">{m.asunto}</span>
+              {m.atendido && <span className="pg-badge pg-badge-success" style={{ marginLeft: 6 }}>atendido</span>}
             </summary>
             <dl style={{ display: "grid", gridTemplateColumns: "160px 1fr", gap: "4px 12px", margin: "12px 0", fontSize: 14 }}>
               <Field k="Correo" v={m.correo} />
@@ -93,7 +82,9 @@ export default async function ContactoAdminPage() {
                   await marcarContacto(m.id, !m.atendido);
                 }}
               >
-                <button type="submit">{m.atendido ? "Marcar sin atender" : "Marcar atendido"}</button>
+                <button type="submit" className="pg-btn pg-btn-ghost pg-btn-sm">
+                  {m.atendido ? "Marcar sin atender" : "Marcar atendido"}
+                </button>
               </form>
             </div>
           </details>

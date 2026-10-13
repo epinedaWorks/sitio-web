@@ -29,80 +29,63 @@ export default async function UsuariosPage({
   const usuarios = await prisma.adminUser.findMany({ orderBy: { createdAt: "asc" } });
   const aviso = searchParams.msg ? MSG[searchParams.msg] : null;
 
-  const input: React.CSSProperties = {
-    padding: "10px 12px",
-    fontSize: 14,
-    border: "1px solid #ccc",
-    borderRadius: 8,
-  };
-
   return (
-    <main style={{ maxWidth: 720, margin: "40px auto", fontFamily: "sans-serif" }}>
-      <h1>Usuarios del panel</h1>
-      <p style={{ opacity: 0.75 }}>
-        Quién puede entrar a este panel. <b>Admin</b> puede todo (incluye crear usuarios y editar
-        los correos). <b>Editor</b> gestiona eventos, galería, ponentes, inscritos y contacto, pero
-        no puede tocar usuarios ni la configuración de correo. <b>Solo lectura</b> entra y ve todo
-        igual, pero no puede crear, cambiar ni borrar nada — ideal para alguien que solo necesita
-        consultar (dar seguimiento, revisar datos) sin riesgo de tocar algo por accidente.{" "}
-        <b>Solo escaneo</b> es para el equipo que solo va a tomar asistencia el día del evento: al
-        entrar va directo a "Tomar asistencia" y no ve ninguna otra sección del panel. Además, a
-        cada <b>Editor</b> o <b>Solo escaneo</b> le puedes marcar qué puestos puede trabajar
-        (entrada, exposición de proyectos, coffee break, almuerzo o jornada de la tarde) — sin
-        marcar ninguno, puede escanear los cinco.
-      </p>
+    <main className="pg-content-narrow">
+      <div className="pg-head">
+        <h1>Usuarios</h1>
+        <p>
+          Quién puede entrar a este panel. <b>Admin</b> puede todo (incluye crear usuarios y editar los
+          correos). <b>Editor</b> gestiona eventos, galería, ponentes, inscritos y contacto, pero no puede
+          tocar usuarios ni la configuración de correo. <b>Solo lectura</b> entra y ve todo igual, pero no
+          puede crear, cambiar ni borrar nada — ideal para alguien que solo necesita consultar (dar
+          seguimiento, revisar datos) sin riesgo de tocar algo por accidente. <b>Solo escaneo</b> es para
+          el equipo que solo va a tomar asistencia el día del evento: al entrar va directo a "Tomar
+          asistencia" y no ve ninguna otra sección del panel. Además, a cada <b>Editor</b> o{" "}
+          <b>Solo escaneo</b> le puedes marcar qué puestos puede trabajar (entrada, exposición de
+          proyectos, coffee break, almuerzo o jornada de la tarde) — sin marcar ninguno, puede escanear
+          los cinco.
+        </p>
+      </div>
 
-      {aviso && <p style={{ color: aviso[1], fontWeight: 600 }}>{aviso[0]}</p>}
+      {aviso && (
+        <p className={`pg-notice ${aviso[1] === "crimson" ? "pg-notice-err" : "pg-notice-ok"}`}>{aviso[0]}</p>
+      )}
 
-      <h3 style={{ marginTop: 28 }}>Crear usuario</h3>
-      <form action={crearUsuario} style={{ display: "grid", gap: 10, maxWidth: 440 }}>
-        <input name="name" placeholder="Nombre" required style={input} />
-        <input name="email" type="email" placeholder="Correo" required style={input} />
-        <input
-          name="password"
-          type="password"
-          placeholder="Contraseña (mínimo 8)"
-          required
-          minLength={8}
-          style={input}
-        />
-        <select name="role" defaultValue="EDITOR" style={input}>
+      <h3 style={{ marginTop: 28, fontSize: 16 }}>Crear usuario</h3>
+      <form action={crearUsuario} className="pg-card" style={{ display: "grid", gap: 10, maxWidth: 440 }}>
+        <input name="name" placeholder="Nombre" required />
+        <input name="email" type="email" placeholder="Correo" required />
+        <input name="password" type="password" placeholder="Contraseña (mínimo 8)" required minLength={8} />
+        <select name="role" defaultValue="EDITOR">
           <option value="EDITOR">Editor</option>
           <option value="ADMIN">Admin</option>
           <option value="VIEWER">Solo lectura</option>
           <option value="ESCANEO">Solo escaneo</option>
         </select>
-        <button type="submit" style={{ ...input, cursor: "pointer", fontWeight: 600 }}>
+        <button type="submit" className="pg-btn pg-btn-primary" style={{ justifySelf: "start" }}>
           Crear usuario
         </button>
       </form>
 
-      <h3 style={{ marginTop: 32 }}>Usuarios ({usuarios.length})</h3>
+      <h3 style={{ marginTop: 32, fontSize: 16 }}>Usuarios ({usuarios.length})</h3>
       {usuarios.map((u) => (
         <div
           key={u.id}
+          className="pg-card"
           style={{
             display: "flex",
             alignItems: "center",
             gap: 12,
-            border: "1px solid #ddd",
-            borderRadius: 10,
-            padding: "10px 14px",
             marginBottom: 8,
-            background: "#fff",
           }}
         >
           <div style={{ flex: 1, minWidth: 0 }}>
             <b>{u.name}</b>{" "}
             {u.email === yo ? (
               <span
-                style={{
-                  fontSize: 12,
-                  padding: "2px 8px",
-                  borderRadius: 999,
-                  background: u.role === "ADMIN" ? "#d5f5e3" : u.role === "VIEWER" || u.role === "ESCANEO" ? "#eee" : "#eef",
-                  color: u.role === "ADMIN" ? "#1b5e20" : u.role === "VIEWER" || u.role === "ESCANEO" ? "#555" : "#334",
-                }}
+                className={`pg-badge ${
+                  u.role === "ADMIN" ? "pg-badge-success" : u.role === "VIEWER" || u.role === "ESCANEO" ? "pg-badge-neutral" : "pg-badge-info"
+                }`}
               >
                 {ETIQUETAS[u.role]}
               </span>

@@ -14,20 +14,20 @@ export default async function GaleriaAdminPage() {
   });
 
   return (
-    <main style={{ maxWidth: 900, margin: "40px auto", fontFamily: "sans-serif" }}>
-      <h1>Álbumes y galería</h1>
-      <p style={{ opacity: 0.75 }}>
-        Cada evento puede tener varios álbumes (uno por actividad: charlas, talleres, networking, etc.)
-      </p>
+    <main className="pg-content-narrow">
+      <div className="pg-head">
+        <h1>Galería</h1>
+        <p>Cada evento puede tener varios álbumes (uno por actividad: charlas, talleres, networking, etc.)</p>
+      </div>
 
       {soloLectura && (
-        <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, background: "#eee", color: "#555" }}>
+        <p className="pg-notice pg-notice-info">
           Estás en modo solo lectura: puedes ver todo, pero no crear, subir ni cambiar nada aquí.
         </p>
       )}
 
-      <h3>Crear álbum</h3>
-      <form action={crearAlbum} style={{ display: "grid", gap: 10, maxWidth: 480, marginBottom: 32 }}>
+      <h3 style={{ fontSize: 16 }}>Crear álbum</h3>
+      <form action={crearAlbum} className="pg-card" style={{ display: "grid", gap: 10, maxWidth: 480, marginBottom: 32 }}>
         <select name="eventId" required>
           <option value="" disabled selected>
             Selecciona un evento
@@ -40,11 +40,13 @@ export default async function GaleriaAdminPage() {
         </select>
         <input name="title" placeholder="Nombre del álbum (ej. Talleres)" required />
         <textarea name="description" placeholder="Descripción (opcional)" rows={2} />
-        <button type="submit">Crear álbum</button>
+        <button type="submit" className="pg-btn pg-btn-primary" style={{ justifySelf: "start" }}>
+          Crear álbum
+        </button>
       </form>
 
       {albumes.map((album) => (
-        <section key={album.id} style={{ border: "1px solid #ddd", borderRadius: 10, padding: 16, marginBottom: 16 }}>
+        <section key={album.id} className="pg-card" style={{ marginBottom: 16 }}>
           <h4>
             {album.title} <span style={{ opacity: 0.6, fontWeight: 400 }}>· {album.event.title}</span>
           </h4>

@@ -16,22 +16,20 @@ export default async function CuposPage({
   const aviso = searchParams?.msg ? MENSAJES[searchParams.msg] : null;
 
   return (
-    <main style={{ maxWidth: 640, margin: "40px auto", fontFamily: "sans-serif", padding: "0 16px" }}>
-      <h1>Cupos de los formularios</h1>
-      <p style={{ opacity: 0.75, fontSize: 14 }}>
-        Cierra un formulario (o una modalidad puntual) cuando se llene el cupo. A quien lo abra le
-        aparecerá el mensaje que escribas en vez del formulario — no se puede seguir enviando aunque se
-        tenga el enlace directo (/inscripcion, /conferencistas).
-      </p>
-
-      {aviso && (
-        <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, background: "#d5f5e3", color: "#1b5e20" }}>
-          {aviso}
+    <main className="pg-content-narrow">
+      <div className="pg-head">
+        <h1>Cupos</h1>
+        <p>
+          Cierra un formulario (o una modalidad puntual) cuando se llene el cupo. A quien lo abra le
+          aparecerá el mensaje que escribas en vez del formulario — no se puede seguir enviando aunque se
+          tenga el enlace directo (/inscripcion, /conferencistas).
         </p>
-      )}
+      </div>
 
-      <form action={guardarCupos} style={{ display: "grid", gap: 20, marginTop: 20 }}>
-        <fieldset style={{ border: "1px solid #e2e2e2", borderRadius: 10, padding: 16 }}>
+      {aviso && <p className="pg-notice pg-notice-ok">{aviso}</p>}
+
+      <form action={guardarCupos} style={{ display: "grid", gap: 20 }}>
+        <fieldset className="pg-card" style={{ border: "1px solid #e7e3d8" }}>
           <legend style={{ fontWeight: 700, padding: "0 6px" }}>Inscripción de asistentes</legend>
           <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
             <input type="checkbox" name="inscripcionAbierta" defaultChecked={cupos.inscripcionAbierta} />
@@ -48,7 +46,7 @@ export default async function CuposPage({
           </label>
         </fieldset>
 
-        <fieldset style={{ border: "1px solid #e2e2e2", borderRadius: 10, padding: 16 }}>
+        <fieldset className="pg-card" style={{ border: "1px solid #e7e3d8" }}>
           <legend style={{ fontWeight: 700, padding: "0 6px" }}>Postulaciones de ponentes, por modalidad</legend>
           <div style={{ display: "grid", gap: 8 }}>
             <label style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 14 }}>
@@ -81,7 +79,7 @@ export default async function CuposPage({
         </fieldset>
 
         <div>
-          <button type="submit" style={{ fontWeight: 700, padding: "8px 16px" }}>
+          <button type="submit" className="pg-btn pg-btn-primary">
             Guardar
           </button>
         </div>

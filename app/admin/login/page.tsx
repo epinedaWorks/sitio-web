@@ -33,29 +33,38 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <main style={{ maxWidth: 380, margin: "80px auto", fontFamily: "sans-serif" }}>
-      <h1>Panel de Python Guatemala</h1>
-      <p>Inicia sesión con tu cuenta del equipo core.</p>
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <input
-          type="email"
-          placeholder="Correo"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
+    <main style={{ maxWidth: 380, margin: "100px auto", padding: "0 16px" }}>
+      <div className="pg-card" style={{ textAlign: "center" }}>
+        <img
+          src="/assets/img/brand/logo-badge.png"
+          alt="Python Guatemala"
+          width={48}
+          height={48}
+          style={{ borderRadius: "50%", border: "2px solid #ffc23c", margin: "0 auto 14px" }}
         />
-        <input
-          type="password"
-          placeholder="Contraseña"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        {error && <p style={{ color: "red" }}>{error}</p>}
-        <button type="submit" disabled={loading}>
-          {loading ? "Ingresando..." : "Ingresar"}
-        </button>
-      </form>
+        <h1 style={{ fontSize: "1.4rem", margin: "0 0 6px" }}>Panel de Python Guatemala</h1>
+        <p style={{ opacity: 0.7, fontSize: 13.5, margin: "0 0 20px" }}>Inicia sesión con tu cuenta del equipo core.</p>
+        <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: 12, textAlign: "left" }}>
+          <input
+            type="email"
+            placeholder="Correo"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
+          <input
+            type="password"
+            placeholder="Contraseña"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          {error && <p className="pg-notice pg-notice-err" style={{ margin: 0 }}>{error}</p>}
+          <button type="submit" disabled={loading} className="pg-btn pg-btn-primary" style={{ justifyContent: "center" }}>
+            {loading ? "Ingresando..." : "Ingresar"}
+          </button>
+        </form>
+      </div>
     </main>
   );
 }

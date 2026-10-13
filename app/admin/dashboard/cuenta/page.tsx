@@ -1,12 +1,12 @@
 import { requireAdminSession } from "@/lib/require-admin";
 import { cambiarPassword } from "../actions";
 
-const MSG: Record<string, [string, string]> = {
-  ok: ["✅ Contraseña actualizada. Úsala la próxima vez que inicies sesión.", "#0a7a55"],
-  malactual: ["La contraseña actual no es correcta.", "crimson"],
-  nocoincide: ["La nueva contraseña y su confirmación no coinciden.", "crimson"],
-  corta: ["La nueva contraseña debe tener al menos 8 caracteres.", "crimson"],
-  error: ["No se pudo actualizar. Intenta de nuevo.", "crimson"],
+const MSG: Record<string, [string, boolean]> = {
+  ok: ["✅ Contraseña actualizada. Úsala la próxima vez que inicies sesión.", true],
+  malactual: ["La contraseña actual no es correcta.", false],
+  nocoincide: ["La nueva contraseña y su confirmación no coinciden.", false],
+  corta: ["La nueva contraseña debe tener al menos 8 caracteres.", false],
+  error: ["No se pudo actualizar. Intenta de nuevo.", false],
 };
 
 export default async function CuentaPage({
@@ -17,31 +17,17 @@ export default async function CuentaPage({
   const session = await requireAdminSession({ permiteSoloEscaneo: true });
   const aviso = searchParams.msg ? MSG[searchParams.msg] : null;
 
-  const input: React.CSSProperties = {
-    padding: "10px 12px",
-    fontSize: 14,
-    border: "1px solid #ccc",
-    borderRadius: 8,
-  };
-
   return (
-    <main style={{ maxWidth: 460, margin: "40px auto", fontFamily: "sans-serif" }}>
-      <h1>Mi cuenta</h1>
-      <p style={{ opacity: 0.7 }}>Sesión iniciada como {session.user?.email}</p>
+    <main className="pg-content-narrow">
+      <div className="pg-head">
+        <h1>Mi cuenta</h1>
+        <p>Sesión iniciada como {session.user?.email}</p>
+      </div>
 
-      <h3 style={{ marginTop: 28 }}>Cambiar contraseña</h3>
-      {aviso && (
-        <p style={{ color: aviso[1], fontWeight: 600, margin: "8px 0 4px" }}>{aviso[0]}</p>
-      )}
-      <form action={cambiarPassword} style={{ display: "grid", gap: 12, marginTop: 8 }}>
-        <input
-          type="password"
-          name="actual"
-          placeholder="Contraseña actual"
-          required
-          autoComplete="current-password"
-          style={input}
-        />
+      <h3 style={{ fontSize: 16 }}>Cambiar contraseña</h3>
+      {aviso && <p className={`pg-notice ${aviso[1] ? "pg-notice-ok" : "pg-notice-err"}`}>{aviso[0]}</p>}
+      <form action={cambiarPassword} className="pg-card" style={{ display: "grid", gap: 12, maxWidth: 420 }}>
+        <input type="password" name="actual" placeholder="Contraseña actual" required autoComplete="current-password" />
         <input
           type="password"
           name="nueva"
@@ -49,7 +35,6 @@ export default async function CuentaPage({
           required
           minLength={8}
           autoComplete="new-password"
-          style={input}
         />
         <input
           type="password"
@@ -58,9 +43,8 @@ export default async function CuentaPage({
           required
           minLength={8}
           autoComplete="new-password"
-          style={input}
         />
-        <button type="submit" style={{ ...input, cursor: "pointer", fontWeight: 600 }}>
+        <button type="submit" className="pg-btn pg-btn-primary" style={{ justifySelf: "start" }}>
           Guardar nueva contraseña
         </button>
       </form>

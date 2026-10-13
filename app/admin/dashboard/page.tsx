@@ -2,6 +2,10 @@ import Link from "next/link";
 import { requireAdminSession } from "@/lib/require-admin";
 import { prisma } from "@/lib/prisma";
 import { getEventoActivo } from "@/lib/settings";
+import { TIPOS_ESCANEO, ETIQUETA_TIPO, CAMPOS_ESCANEO } from "@/lib/scan";
+import { soloFecha, soloHora } from "@/lib/fecha";
+
+export const dynamic = "force-dynamic";
 
 export default async function DashboardHome({
   searchParams,
@@ -12,150 +16,215 @@ export default async function DashboardHome({
   const role = (session.user as { role?: string } | undefined)?.role;
   const esAdmin = role === "ADMIN";
 
-  // Los números de inscripción/asistencia/ponentes/voluntarios son del evento
-  // activo, no de todos los eventos juntos — si no, al cambiar de evento se
-  // mezclarían las cifras de ediciones distintas. Los datos de ediciones
-  // pasadas no se borran: siguen completos y se ven desde cada lista
-  // (Inscritos, Ponentes, Voluntarios) eligiendo ese evento en el selector.
   const eventoActivo = await getEventoActivo();
-  const whereEvento = eventoActivo ? { eventId: eventoActivo.id } : undefined;
 
-  const [eventos, ponentes, inscritos, albumes, contacto, ingresaron, voluntarios] = await Promise.all([
-    prisma.event.count(),
-    prisma.speakerSubmission.count({ where: { status: "PENDIENTE", ...whereEvento } }),
+  // Todo lo de esta página es del evento activo — si no hay ninguno marcado,
+  // no hay nada que mostrar más que la invitación a elegir uno.
+  if (!eventoActivo) {
+    return (
+      <main className="pg-content-narrow">
+        <div className="pg-head">
+          <h1>Evento en curso</h1>
+        </div>
+        <div className="pg-card">
+          <p style={{ margin: "0 0 14px" }}>
+            Todavía no hay ningún evento marcado como <strong>activo</strong>. Mientras no elijas uno, la
+            portada, los formularios públicos y este dashboard no tienen de qué evento mostrar datos.
+          </p>
+          {esAdmin ? (
+            <Link href="/admin/dashboard/eventos" className="pg-btn pg-btn-primary">
+              Elegir evento activo →
+            </Link>
+          ) : (
+            <p style={{ fontSize: 13, opacity: 0.7 }}>Pide a una cuenta ADMIN que marque un evento activo.</p>
+          )}
+        </div>
+      </main>
+    );
+  }
+
+  const whereEvento = { eventId: eventoActivo.id };
+
+  const [
+    totalInscritos,
+    conteosCheckin,
+    porEstadoPonente,
+    totalVoluntarios,
+    ultimosInscritos,
+    albumes,
+    sinAtender,
+  ] = await Promise.all([
     prisma.attendeeRegistration.count({ where: whereEvento }),
-    prisma.album.count(),
-    prisma.contactMessage.count({ where: { atendido: false } }),
-    prisma.attendeeRegistration.count({ where: { checkedInAt: { not: null }, ...whereEvento } }),
+    Promise.all(
+      TIPOS_ESCANEO.map((t) =>
+        prisma.attendeeRegistration.count({ where: { ...whereEvento, [CAMPOS_ESCANEO[t].at]: { not: null } } as any })
+      )
+    ),
+    Promise.all(
+      (["PENDIENTE", "ACEPTADA", "RECHAZADA"] as const).map((s) =>
+        prisma.speakerSubmission.count({ where: { ...whereEvento, status: s } })
+      )
+    ),
     prisma.volunteerApplication.count({ where: whereEvento }),
+    prisma.attendeeRegistration.findMany({
+      where: whereEvento,
+      orderBy: { createdAt: "desc" },
+      take: 6,
+      select: { nombre: true, correo: true, rol: true, createdAt: true, checkedInAt: true },
+    }),
+    prisma.album.count({ where: whereEvento }),
+    prisma.contactMessage.count({ where: { atendido: false } }),
   ]);
 
-  return (
-    <main style={{ maxWidth: 900, margin: "40px auto", padding: "0 16px", fontFamily: "sans-serif" }}>
-      <h1>Panel de Python Guatemala</h1>
-      <p style={{ opacity: 0.8 }}>
-        Sesión: {session.user?.email} · <b>{role === "VIEWER" ? "Solo lectura" : role}</b>
-      </p>
+  const conteo: Record<string, number> = Object.fromEntries(TIPOS_ESCANEO.map((t, i) => [t, conteosCheckin[i]]));
+  const [pendientes, aceptadas, rechazadas] = porEstadoPonente;
+  const esProximo = eventoActivo.date.getTime() >= Date.now();
 
-      {eventoActivo ? (
-        <p style={{ fontSize: 13, opacity: 0.7, margin: "4px 0 0" }}>
-          Las cifras de abajo son de <strong>{eventoActivo.title}</strong> (el evento activo).{" "}
-          <Link href="/admin/dashboard/eventos" style={{ color: "inherit" }}>
-            Cambiar evento activo →
-          </Link>
-        </p>
-      ) : (
-        <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 13, background: "#fdebd0", color: "#8a5a00", margin: "8px 0 0" }}>
-          No hay ningún evento marcado como activo — las cifras de abajo cuentan TODOS los eventos
-          juntos.{" "}
-          <Link href="/admin/dashboard/eventos" style={{ color: "inherit" }}>
-            Márcalo en Eventos →
-          </Link>
-        </p>
-      )}
+  return (
+    <main>
+      <div className="pg-head">
+        <div className="pg-head-row">
+          <div>
+            <h1>Evento en curso</h1>
+            <p>
+              <strong>{eventoActivo.title}</strong> · {soloFecha(eventoActivo.date, "full")} ·{" "}
+              {eventoActivo.location}
+              {esProximo ? (
+                <span className="pg-badge pg-badge-info" style={{ marginLeft: 8 }}>
+                  Próximo
+                </span>
+              ) : (
+                <span className="pg-badge pg-badge-neutral" style={{ marginLeft: 8 }}>
+                  Ya pasó
+                </span>
+              )}
+            </p>
+          </div>
+          {esAdmin && (
+            <Link href="/admin/dashboard/eventos" className="pg-btn pg-btn-ghost pg-btn-sm">
+              Cambiar evento activo
+            </Link>
+          )}
+        </div>
+      </div>
 
       {searchParams?.msg === "solo_lectura" && (
-        <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, background: "#fdebd0", color: "#8a5a00" }}>
+        <p className="pg-notice pg-notice-warn">
           Tu cuenta es de solo lectura: puedes ver todo, pero no crear, cambiar ni borrar nada.
         </p>
       )}
 
-      <h2 style={{ fontSize: "1.1rem", margin: "28px 0 12px", opacity: 0.7 }}>Gestión</h2>
-      <div style={grid}>
-        <Card href="/admin/dashboard/inscritos" icon="🎟️" title="Inscritos" value={inscritos} desc="Ver y exportar participantes" />
-        <Card href="/admin/dashboard/checkin" icon="📷" title="Asistencia (ingresaron)" value={ingresaron} desc="Escanear QR el día del evento" />
-        <Card href="/admin/dashboard/eventos" icon="📅" title="Eventos" value={eventos} desc="Crear y publicar eventos" />
-        <Card href="/admin/dashboard/galeria" icon="🖼️" title="Álbumes de fotos" value={albumes} desc="Subir y ordenar fotos por actividad" />
-        <Card href="/admin/dashboard/ponentes" icon="🎤" title="Postulaciones pendientes" value={ponentes} desc="Revisar y aprobar ponentes" />
-        <Card href="/admin/dashboard/voluntarios" icon="🙋" title="Voluntarios" value={voluntarios} desc="Ver y exportar postulaciones" />
-        <Card href="/admin/dashboard/contacto" icon="✉️" title="Contacto sin atender" value={contacto} desc="Patrocinio, prensa, más información" />
-        {esAdmin && (
-          <Card
-            href="/admin/dashboard/anuncios"
-            icon="📣"
-            title="Anuncios"
-            desc="Enviar un correo a asistentes y/o ponentes de un evento"
-          />
-        )}
+      {/* Inscripción */}
+      <h2 style={{ fontSize: 15, opacity: 0.7, margin: "0 0 10px" }}>Inscripción</h2>
+      <div className="pg-stats" style={{ marginBottom: 26 }}>
+        <Link href="/admin/dashboard/inscritos" className="pg-stat">
+          <span className="ic">🎟️</span>
+          <span className="n">{totalInscritos}</span>
+          <span className="l">Inscritos</span>
+        </Link>
+        <Link href="/admin/dashboard/ponentes" className="pg-stat">
+          <span className="ic">🎤</span>
+          <span className="n">{pendientes}</span>
+          <span className="l">Ponentes pendientes</span>
+        </Link>
+        <Link href="/admin/dashboard/voluntarios" className="pg-stat">
+          <span className="ic">🙋</span>
+          <span className="n">{totalVoluntarios}</span>
+          <span className="l">Voluntarios</span>
+        </Link>
+        <Link href="/admin/dashboard/galeria" className="pg-stat">
+          <span className="ic">🖼️</span>
+          <span className="n">{albumes}</span>
+          <span className="l">Álbumes del evento</span>
+        </Link>
       </div>
 
-      <h2 style={{ fontSize: "1.1rem", margin: "32px 0 12px", opacity: 0.7 }}>Configuración</h2>
-      <div style={grid}>
-        {esAdmin && (
-          <Card
-            href="/admin/dashboard/usuarios"
-            icon="👥"
-            title="Usuarios"
-            desc="Quién puede entrar al panel · crear y quitar accesos"
-          />
-        )}
-        {esAdmin && (
-          <Card
-            href="/admin/dashboard/ajustes"
-            icon="📨"
-            title="Ajustes de correo"
-            desc="A qué correos llegan los avisos"
-          />
-        )}
-        {esAdmin && (
-          <Card
-            href="/admin/dashboard/cupos"
-            icon="🚦"
-            title="Cupos de los formularios"
-            desc="Abrir/cerrar inscripción o una modalidad de ponentes"
-          />
-        )}
-        <Card
-          href="/admin/dashboard/cuenta"
-          icon="🔑"
-          title="Mi cuenta"
-          desc="Cambiar mi contraseña"
-        />
+      {/* Check-in del día */}
+      <h2 style={{ fontSize: 15, opacity: 0.7, margin: "0 0 10px" }}>Asistencia (check-in)</h2>
+      <div className="pg-stats" style={{ marginBottom: 26 }}>
+        {TIPOS_ESCANEO.map((t) => (
+          <Link key={t} href="/admin/dashboard/checkin" className="pg-stat">
+            <span className="n">
+              {conteo[t]}
+              <span style={{ fontSize: 14, opacity: 0.5, fontWeight: 600 }}> / {totalInscritos}</span>
+            </span>
+            <span className="l">{ETIQUETA_TIPO[t]}</span>
+          </Link>
+        ))}
+      </div>
+
+      <div className="pg-dash-grid">
+        {/* Últimos inscritos */}
+        <div>
+          <h2 style={{ fontSize: 15, opacity: 0.7, margin: "0 0 10px" }}>Últimos inscritos</h2>
+          <div className="pg-table-wrap">
+            {ultimosInscritos.length === 0 ? (
+              <p style={{ padding: 16, opacity: 0.7, margin: 0 }}>Aún no hay inscritos.</p>
+            ) : (
+              <table className="pg-table">
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Rol</th>
+                    <th>Cuándo</th>
+                    <th>Entrada</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {ultimosInscritos.map((r) => (
+                    <tr key={r.correo} className={r.checkedInAt ? "is-done" : undefined}>
+                      <td>
+                        <div style={{ fontWeight: 600 }}>{r.nombre}</div>
+                        <div style={{ opacity: 0.6, fontSize: 12 }}>{r.correo}</div>
+                      </td>
+                      <td>{r.rol || "—"}</td>
+                      <td style={{ whiteSpace: "nowrap" }}>{soloHora(r.createdAt)}</td>
+                      <td>
+                        {r.checkedInAt ? (
+                          <span className="pg-badge pg-badge-success">✓ ingresó</span>
+                        ) : (
+                          <span className="pg-badge pg-badge-neutral">—</span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+          <p style={{ marginTop: 8 }}>
+            <Link href="/admin/dashboard/inscritos" style={{ fontSize: 13 }}>
+              Ver todos los inscritos →
+            </Link>
+          </p>
+        </div>
+
+        {/* Accesos rápidos + ponentes */}
+        <div>
+          <h2 style={{ fontSize: 15, opacity: 0.7, margin: "0 0 10px" }}>Ponentes por estado</h2>
+          <div className="pg-card" style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 20 }}>
+            <span className="pg-badge pg-badge-warn">{pendientes} pendientes</span>
+            <span className="pg-badge pg-badge-success">{aceptadas} aceptadas</span>
+            <span className="pg-badge pg-badge-danger">{rechazadas} rechazadas</span>
+          </div>
+
+          <h2 style={{ fontSize: 15, opacity: 0.7, margin: "0 0 10px" }}>Accesos rápidos</h2>
+          <div className="pg-card" style={{ display: "grid", gap: 8 }}>
+            <Link href="/admin/dashboard/checkin" className="pg-btn pg-btn-primary">
+              📷 Tomar asistencia
+            </Link>
+            {esAdmin && (
+              <Link href="/admin/dashboard/anuncios" className="pg-btn pg-btn-ghost">
+                📣 Enviar un anuncio
+              </Link>
+            )}
+            <Link href="/admin/dashboard/contacto" className="pg-btn pg-btn-ghost">
+              ✉️ Contacto sin atender
+              {sinAtender > 0 && <span className="pg-badge pg-badge-danger" style={{ marginLeft: "auto" }}>{sinAtender}</span>}
+            </Link>
+          </div>
+        </div>
       </div>
     </main>
-  );
-}
-
-const grid: React.CSSProperties = {
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
-  gap: 14,
-};
-
-function Card({
-  href,
-  icon,
-  title,
-  value,
-  desc,
-}: {
-  href: string;
-  icon: string;
-  title: string;
-  value?: number;
-  desc: string;
-}) {
-  return (
-    <Link
-      href={href}
-      style={{
-        display: "block",
-        border: "1px solid #e2e2e2",
-        borderRadius: 12,
-        padding: "16px 18px",
-        textDecoration: "none",
-        color: "inherit",
-        background: "#fff",
-      }}
-    >
-      <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
-        <span style={{ fontSize: 20 }}>{icon}</span>
-        {typeof value === "number" && (
-          <span style={{ fontSize: 26, fontWeight: 700, lineHeight: 1 }}>{value}</span>
-        )}
-      </div>
-      <div style={{ fontWeight: 600, marginTop: 8 }}>{title}</div>
-      <div style={{ fontSize: 13, opacity: 0.65, marginTop: 2 }}>{desc}</div>
-    </Link>
   );
 }

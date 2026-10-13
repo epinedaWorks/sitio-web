@@ -22,27 +22,21 @@ export default async function AjustesPage({
   const team = teamGuardado || process.env.TEAM_EMAIL || "";
   const bcc = bccGuardado || process.env.EMAIL_BCC || "";
 
-  const input: React.CSSProperties = {
-    width: "100%",
-    padding: "10px 12px",
-    fontSize: 14,
-    border: "1px solid #ccc",
-    borderRadius: 8,
-  };
+  const input: React.CSSProperties = { width: "100%" };
 
   return (
-    <main style={{ maxWidth: 620, margin: "40px auto", fontFamily: "sans-serif" }}>
-      <h1>Ajustes de correo</h1>
-      <p style={{ opacity: 0.75 }}>
-        Aquí decides a qué correos llegan los avisos de inscripciones, ponentes y
-        contacto. Los cambios se aplican en unos segundos, sin volver a publicar.
-      </p>
+    <main className="pg-content-narrow">
+      <div className="pg-head">
+        <h1>Ajustes de correo</h1>
+        <p>
+          Aquí decides a qué correos llegan los avisos de inscripciones, ponentes y contacto. Los cambios
+          se aplican en unos segundos, sin volver a publicar.
+        </p>
+      </div>
 
-      {searchParams.msg === "ok" && (
-        <p style={{ color: "#0a7a55", fontWeight: 600 }}>✅ Ajustes guardados.</p>
-      )}
+      {searchParams.msg === "ok" && <p className="pg-notice pg-notice-ok">✅ Ajustes guardados.</p>}
 
-      <form action={guardarAjustes} style={{ display: "grid", gap: 18, marginTop: 16 }}>
+      <form action={guardarAjustes} className="pg-card" style={{ display: "grid", gap: 18, maxWidth: 520 }}>
         <div>
           <label htmlFor="teamEmail" style={{ fontWeight: 600, display: "block", marginBottom: 4 }}>
             Correos del equipo
@@ -79,7 +73,7 @@ export default async function AjustesPage({
           </small>
         </div>
 
-        <button type="submit" style={{ ...input, width: "auto", cursor: "pointer", fontWeight: 600 }}>
+        <button type="submit" className="pg-btn pg-btn-primary" style={{ justifySelf: "start" }}>
           Guardar
         </button>
       </form>

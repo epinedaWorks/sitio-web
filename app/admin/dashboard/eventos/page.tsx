@@ -28,54 +28,34 @@ export default async function EventosAdminPage({
   const aviso = searchParams?.msg ? MENSAJES[searchParams.msg] : null;
 
   return (
-    <main style={{ maxWidth: 900, margin: "40px auto", fontFamily: "sans-serif" }}>
-      <h1>Eventos</h1>
-      <p style={{ opacity: 0.7, fontSize: 13, marginTop: -8 }}>
-        El evento marcado como <strong>activo</strong> es al que apuntan la portada, la inscripción, las
-        postulaciones de ponentes/voluntarios, el check-in y las estadísticas del panel. Solo puede haber
-        uno activo a la vez, y cambiarlo actualiza todo eso de inmediato.
-      </p>
+    <main className="pg-content-narrow">
+      <div className="pg-head">
+        <h1>Eventos</h1>
+        <p>
+          El evento marcado como <strong>activo</strong> es al que apuntan la portada, la inscripción, las
+          postulaciones de ponentes/voluntarios, el check-in y las estadísticas del panel. Solo puede haber
+          uno activo a la vez, y cambiarlo actualiza todo eso de inmediato.
+        </p>
+      </div>
 
       {esAdmin ? (
-        <div
-          style={{
-            background: "#fff8e1",
-            border: "1px solid #ffe29a",
-            borderRadius: 10,
-            padding: "12px 16px",
-            margin: "16px 0 24px",
-          }}
-        >
+        <div className="pg-card" style={{ background: "#fff8e1", borderColor: "#ffe29a", marginBottom: 24 }}>
           <SelectorEventoActivo eventos={eventos} activoId={eventoActivoId} action={marcarEventoActivo} />
         </div>
       ) : (
-        <p style={{ fontSize: 13, opacity: 0.7, margin: "8px 0 24px" }}>
-          Solo una cuenta ADMIN puede cambiar el evento activo.
-        </p>
+        <p className="pg-notice pg-notice-info">Solo una cuenta ADMIN puede cambiar el evento activo.</p>
       )}
 
       {soloLectura && (
-        <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 14, background: "#eee", color: "#555" }}>
+        <p className="pg-notice pg-notice-info">
           Estás en modo solo lectura: puedes ver todo, pero no crear ni cambiar nada aquí.
         </p>
       )}
 
-      {aviso && (
-        <p
-          style={{
-            padding: "8px 12px",
-            borderRadius: 8,
-            fontSize: 14,
-            background: aviso.ok ? "#d5f5e3" : "#fadbd8",
-            color: aviso.ok ? "#1b5e20" : "#8e2a22",
-          }}
-        >
-          {aviso.texto}
-        </p>
-      )}
+      {aviso && <p className={`pg-notice ${aviso.ok ? "pg-notice-ok" : "pg-notice-err"}`}>{aviso.texto}</p>}
 
-      <h2 style={{ fontSize: 18, marginTop: 24 }}>Crear evento</h2>
-      <form action={crearEvento} style={{ display: "grid", gap: 10, maxWidth: 480, marginBottom: 36 }}>
+      <h2 style={{ fontSize: 16, marginTop: 24 }}>Crear evento</h2>
+      <form action={crearEvento} className="pg-card" style={{ display: "grid", gap: 10, maxWidth: 480, marginBottom: 36 }}>
         <input name="title" placeholder="Título (ej. Python eXposition Day 2027)" required />
         <input name="slug" placeholder="slug (ej. xpday-2027)" required />
         <input name="date" type="datetime-local" required />
@@ -84,20 +64,19 @@ export default async function EventosAdminPage({
         <label style={{ fontSize: 14 }}>
           <input type="checkbox" name="published" /> Publicado (visible en el sitio)
         </label>
-        <button type="submit">Crear evento</button>
+        <button type="submit" className="pg-btn pg-btn-primary" style={{ justifySelf: "start" }}>
+          Crear evento
+        </button>
       </form>
 
-      <h2 style={{ fontSize: 18 }}>Eventos ({eventos.length})</h2>
+      <h2 style={{ fontSize: 16 }}>Eventos ({eventos.length})</h2>
       <p style={{ opacity: 0.7, fontSize: 13, marginTop: 0 }}>
         Haz clic en un evento para editar su fecha, lugar, descripción o slug.
       </p>
 
       <div style={{ display: "grid", gap: 12 }}>
         {eventos.map((e) => (
-          <div
-            key={e.id}
-            style={{ border: "1px solid #ddd", borderRadius: 10, padding: "10px 14px", background: "#fff" }}
-          >
+          <div key={e.id} className="pg-card">
             <details>
               <summary style={{ cursor: "pointer", fontWeight: 600, display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" }}>
                 <span>{e.title}</span>
@@ -105,31 +84,10 @@ export default async function EventosAdminPage({
                 <code style={{ fontSize: 12, background: "#f2f2f2", padding: "1px 6px", borderRadius: 4 }}>
                   /eventos/{e.slug}
                 </code>
-                <span
-                  style={{
-                    fontSize: 12,
-                    padding: "2px 8px",
-                    borderRadius: 999,
-                    background: e.published ? "#d5f5e3" : "#eee",
-                    color: e.published ? "#1b5e20" : "#666",
-                  }}
-                >
+                <span className={`pg-badge ${e.published ? "pg-badge-success" : "pg-badge-neutral"}`}>
                   {e.published ? "Publicado" : "Borrador"}
                 </span>
-                {e.slug === eventoActivoSlug && (
-                  <span
-                    style={{
-                      fontSize: 12,
-                      padding: "2px 8px",
-                      borderRadius: 999,
-                      background: "#fff3cd",
-                      color: "#8a6500",
-                      fontWeight: 600,
-                    }}
-                  >
-                    ★ Activo
-                  </span>
-                )}
+                {e.slug === eventoActivoSlug && <span className="pg-badge pg-badge-gold">★ Activo</span>}
               </summary>
 
               <form
@@ -165,7 +123,9 @@ export default async function EventosAdminPage({
                 <label style={{ fontSize: 14 }}>
                   <input type="checkbox" name="published" defaultChecked={e.published} /> Publicado (visible en el sitio)
                 </label>
-                <button type="submit">Guardar cambios</button>
+                <button type="submit" className="pg-btn pg-btn-sm" style={{ justifySelf: "start" }}>
+                  Guardar cambios
+                </button>
               </form>
 
               <div style={{ display: "flex", gap: 12, alignItems: "center", fontSize: 13 }}>
@@ -175,7 +135,9 @@ export default async function EventosAdminPage({
                     await togglePublicado(e.id, !e.published);
                   }}
                 >
-                  <button type="submit">{e.published ? "Despublicar" : "Publicar ahora"}</button>
+                  <button type="submit" className="pg-btn pg-btn-ghost pg-btn-sm">
+                    {e.published ? "Despublicar" : "Publicar ahora"}
+                  </button>
                 </form>
                 {e.published && (
                   <a href={`/eventos/${e.slug}`} target="_blank" rel="noopener noreferrer">

@@ -34,23 +34,25 @@ export default async function CheckinPage() {
   const conteo: Record<string, number> = Object.fromEntries(TIPOS_ESCANEO.map((t, i) => [t, conteos[i]]));
 
   return (
-    <main style={{ maxWidth: 720, margin: "40px auto", padding: "0 16px", fontFamily: "sans-serif" }}>
-      <h1>Tomar asistencia</h1>
-      <p style={{ opacity: 0.8 }}>
-        Apunta la cámara al QR de la persona. También puedes buscar por correo si no lo tiene. El
-        mismo QR sirve para los cinco puestos: entrada, exposición de proyectos, coffee break,
-        almuerzo (requiere ya tener entrada y proyectos) y jornada de la tarde (para quienes se
-        quedan después de almuerzo).
-      </p>
+    <main className="pg-content-narrow">
+      <div className="pg-head">
+        <h1>Tomar asistencia</h1>
+        <p>
+          Apunta la cámara al QR de la persona. También puedes buscar por correo si no lo tiene. El mismo
+          QR sirve para los cinco puestos: entrada, exposición de proyectos, coffee break, almuerzo
+          (requiere ya tener entrada y proyectos) y jornada de la tarde (para quienes se quedan después de
+          almuerzo).
+        </p>
+      </div>
 
       {eventoActivo ? (
-        <p style={{ fontSize: 13, opacity: 0.7, margin: "4px 0 14px" }}>
+        <p className="pg-notice pg-notice-info">
           Contando solo <strong>{eventoActivo.title}</strong> (el evento activo).
         </p>
       ) : (
-        <p style={{ padding: "8px 12px", borderRadius: 8, fontSize: 13, background: "#fdebd0", color: "#8a5a00", margin: "4px 0 14px" }}>
-          No hay ningún evento marcado como activo — los contadores de abajo cuentan TODOS los
-          eventos juntos. Márcalo en{" "}
+        <p className="pg-notice pg-notice-warn">
+          No hay ningún evento marcado como activo — los contadores de abajo cuentan TODOS los eventos
+          juntos. Márcalo en{" "}
           <Link href="/admin/dashboard/eventos" style={{ color: "inherit" }}>
             Eventos
           </Link>
@@ -58,25 +60,18 @@ export default async function CheckinPage() {
         </p>
       )}
 
-      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+      <div className="pg-stats">
         {TIPOS_ESCANEO.map((t) => (
-          <p
-            key={t}
-            style={{
-              display: "inline-block",
-              background: "#eef7f1",
-              border: "1px solid #cde6d9",
-              borderRadius: 10,
-              padding: "8px 14px",
-              fontWeight: 600,
-              margin: 0,
-            }}
-          >
-            {ETIQUETA_TIPO[t]}: {conteo[t]} de {total}
-          </p>
+          <div key={t} className="pg-stat">
+            <span className="n">
+              {conteo[t]}
+              <span style={{ fontSize: 14, opacity: 0.5, fontWeight: 600 }}> / {total}</span>
+            </span>
+            <span className="l">{ETIQUETA_TIPO[t]}</span>
+          </div>
         ))}
       </div>
-      <p style={{ marginTop: 6 }}>
+      <p style={{ marginTop: 8 }}>
         <Link href="/admin/dashboard/checkin" style={{ fontSize: 13 }}>
           actualizar
         </Link>
@@ -84,14 +79,14 @@ export default async function CheckinPage() {
 
       <div style={{ marginTop: 18 }}>
         {soloLectura ? (
-          <p style={{ padding: "10px 14px", borderRadius: 8, fontSize: 14, background: "#eee", color: "#555" }}>
+          <p className="pg-notice pg-notice-info">
             Estás en modo solo lectura: no puedes registrar asistencia. Pide a un Admin o Editor que
             escanee, o consulta la lista de inscritos.
           </p>
         ) : permitidos.length === 0 ? (
-          <p style={{ padding: "10px 14px", borderRadius: 8, fontSize: 14, background: "#fdebd0", color: "#8a5a00" }}>
-            Tu cuenta no tiene ningún puesto de escaneo habilitado. Pide a un Admin que te lo asigne
-            en Usuarios.
+          <p className="pg-notice pg-notice-warn">
+            Tu cuenta no tiene ningún puesto de escaneo habilitado. Pide a un Admin que te lo asigne en
+            Usuarios.
           </p>
         ) : (
           <Scanner tipos={permitidos} />

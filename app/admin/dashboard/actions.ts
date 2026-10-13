@@ -12,12 +12,6 @@ import {
   invalidarSettingsCache,
   SETTING_TEAM_EMAIL,
   SETTING_EMAIL_BCC,
-  SETTING_INSCRIPCION_ABIERTA,
-  SETTING_INSCRIPCION_MENSAJE,
-  SETTING_CHARLA_ABIERTA,
-  SETTING_TALLER_ABIERTA,
-  SETTING_PROYECTO_ABIERTA,
-  SETTING_MODALIDAD_MENSAJE,
   SETTING_EVENTO_ACTIVO,
 } from "@/lib/settings";
 
@@ -320,49 +314,29 @@ export async function actualizarContactadoPonente(submissionId: string, contacta
   revalidatePath("/admin/dashboard/ponentes");
 }
 
-// ---- Cupos de los formularios públicos (solo ADMIN) ----
+// ---- Cupos de los formularios públicos, por evento (solo ADMIN) ----
 export async function guardarCupos(formData: FormData) {
   await requireAdminRole();
-  const flag = (name: string) => (formData.get(name) === "on" ? "1" : "0");
+  const eventId = String(formData.get("eventId") || "");
+  if (!eventId) redirect("/admin/dashboard/cupos");
+  const flag = (name: string) => formData.get(name) === "on";
   const texto = (name: string) => String(formData.get(name) || "").trim();
 
-  await prisma.$transaction([
-    prisma.setting.upsert({
-      where: { key: SETTING_INSCRIPCION_ABIERTA },
-      create: { key: SETTING_INSCRIPCION_ABIERTA, value: flag("inscripcionAbierta") },
-      update: { value: flag("inscripcionAbierta") },
-    }),
-    prisma.setting.upsert({
-      where: { key: SETTING_INSCRIPCION_MENSAJE },
-      create: { key: SETTING_INSCRIPCION_MENSAJE, value: texto("inscripcionMensaje") },
-      update: { value: texto("inscripcionMensaje") },
-    }),
-    prisma.setting.upsert({
-      where: { key: SETTING_CHARLA_ABIERTA },
-      create: { key: SETTING_CHARLA_ABIERTA, value: flag("charlaAbierta") },
-      update: { value: flag("charlaAbierta") },
-    }),
-    prisma.setting.upsert({
-      where: { key: SETTING_TALLER_ABIERTA },
-      create: { key: SETTING_TALLER_ABIERTA, value: flag("tallerAbierta") },
-      update: { value: flag("tallerAbierta") },
-    }),
-    prisma.setting.upsert({
-      where: { key: SETTING_PROYECTO_ABIERTA },
-      create: { key: SETTING_PROYECTO_ABIERTA, value: flag("proyectoAbierta") },
-      update: { value: flag("proyectoAbierta") },
-    }),
-    prisma.setting.upsert({
-      where: { key: SETTING_MODALIDAD_MENSAJE },
-      create: { key: SETTING_MODALIDAD_MENSAJE, value: texto("modalidadMensaje") },
-      update: { value: texto("modalidadMensaje") },
-    }),
-  ]);
-  invalidarSettingsCache();
+  await prisma.event.update({
+    where: { id: eventId },
+    data: {
+      inscripcionAbierta: flag("inscripcionAbierta"),
+      inscripcionMensaje: texto("inscripcionMensaje"),
+      charlaAbierta: flag("charlaAbierta"),
+      tallerAbierta: flag("tallerAbierta"),
+      proyectoAbierta: flag("proyectoAbierta"),
+      modalidadMensaje: texto("modalidadMensaje"),
+    },
+  });
   // "layout" invalida de una vez todas las páginas públicas que comparten el
   // layout donde vive el modal (home, eventos, etc.), no solo "/".
   revalidatePath("/", "layout");
-  redirect("/admin/dashboard/cupos?msg=ok");
+  redirect(`/admin/dashboard/cupos?msg=ok&evento=${eventId}`);
 }
 
 // Mueve una foto una posición arriba o abajo dentro de su álbum.

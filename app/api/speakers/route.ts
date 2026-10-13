@@ -1,23 +1,15 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendSpeakerEmails } from "@/lib/email";
-import {
-  estaAbierto,
-  getSetting,
-  getEventoActivoSlug,
-  SETTING_CHARLA_ABIERTA,
-  SETTING_TALLER_ABIERTA,
-  SETTING_PROYECTO_ABIERTA,
-  SETTING_MODALIDAD_MENSAJE,
-} from "@/lib/settings";
+import { getEventoActivoSlug } from "@/lib/settings";
 
 const MODALIDADES = ["CHARLA", "TALLER", "PROYECTO"] as const;
 const NIVELES = ["BASICO", "INTERMEDIO", "AVANZADO"] as const;
-const FLAG_POR_MODALIDAD: Record<(typeof MODALIDADES)[number], string> = {
-  CHARLA: SETTING_CHARLA_ABIERTA,
-  TALLER: SETTING_TALLER_ABIERTA,
-  PROYECTO: SETTING_PROYECTO_ABIERTA,
-};
+const CAMPO_ABIERTA_POR_MODALIDAD = {
+  CHARLA: "charlaAbierta",
+  TALLER: "tallerAbierta",
+  PROYECTO: "proyectoAbierta",
+} as const;
 
 function str(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
@@ -62,14 +54,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "El correo no es válido" }, { status: 400 });
     }
 
-    // El panel puede cerrar una modalidad puntual (cupo lleno). El modal ya
-    // deshabilita esa opción sin dejar elegirla, pero se valida aquí también
-    // por si alguien llama a la API directo.
-    if (!(await estaAbierto(FLAG_POR_MODALIDAD[modalidad as (typeof MODALIDADES)[number]]))) {
-      const mensaje = (await getSetting(SETTING_MODALIDAD_MENSAJE)) || "Ya se llenó el cupo para esa modalidad.";
-      return NextResponse.json({ error: mensaje }, { status: 403 });
-    }
-
     // Topes de longitud: evita que llenen la base / los correos con texto enorme.
     if (nombre.length > 200 || tema.length > 300 || descripcion.length > 8000 || bio.length > 4000) {
       return NextResponse.json({ error: "Algún campo es demasiado largo" }, { status: 400 });
@@ -90,6 +74,14 @@ export async function POST(req: Request) {
     const event = await prisma.event.findUnique({ where: { slug: eventSlug } });
     if (!event) {
       return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
+    }
+
+    // El panel puede cerrar una modalidad puntual de este evento (cupo
+    // lleno). El modal ya deshabilita esa opción sin dejar elegirla, pero se
+    // valida aquí también por si alguien llama a la API directo.
+    const campoAbierta = CAMPO_ABIERTA_POR_MODALIDAD[modalidad as (typeof MODALIDADES)[number]];
+    if (!event[campoAbierta]) {
+      return NextResponse.json({ error: event.modalidadMensaje }, { status: 403 });
     }
 
     const edadNum = Number.parseInt(str(body.edad), 10);

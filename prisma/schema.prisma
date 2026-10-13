@@ -43,6 +43,17 @@ model Event {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Cupos de ESTE evento (antes vivían en Setting, un solo valor global que
+  // se compartía entre todos los eventos — un evento nuevo heredaba el cupo
+  // cerrado del anterior). Cada evento tiene los suyos, editables desde
+  // /admin/dashboard/cupos.
+  inscripcionAbierta Boolean @default(true)
+  inscripcionMensaje String  @default("Ya se llenó el cupo de inscripción para este evento. ¡Gracias por tu interés! Síguenos en redes para enterarte de la próxima edición.")
+  charlaAbierta      Boolean @default(true)
+  tallerAbierta      Boolean @default(true)
+  proyectoAbierta    Boolean @default(true)
+  modalidadMensaje   String  @default("Ya se llenó el cupo para esta modalidad.")
+
   speakerSubmissions SpeakerSubmission[]
   albums             Album[]
   registrations      AttendeeRegistration[]

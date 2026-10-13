@@ -2,13 +2,7 @@ import { randomBytes } from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendRegistrationEmails } from "@/lib/email";
-import {
-  estaAbierto,
-  getSetting,
-  getEventoActivoSlug,
-  SETTING_INSCRIPCION_ABIERTA,
-  SETTING_INSCRIPCION_MENSAJE,
-} from "@/lib/settings";
+import { getEventoActivoSlug } from "@/lib/settings";
 
 function str(v: unknown): string {
   return typeof v === "string" ? v.trim() : "";
@@ -23,14 +17,6 @@ export async function POST(req: Request) {
 
     // Honeypot: campo oculto que solo rellenan los bots. Fingimos éxito.
     if (str(body.campo_control)) return NextResponse.json({ ok: true });
-
-    // El panel puede cerrar la inscripción (cupo lleno). El modal ya lo avisa
-    // sin mostrar el formulario, pero se valida aquí también por si alguien
-    // llama a la API directo.
-    if (!(await estaAbierto(SETTING_INSCRIPCION_ABIERTA))) {
-      const mensaje = (await getSetting(SETTING_INSCRIPCION_MENSAJE)) || "Ya se llenó el cupo de inscripción.";
-      return NextResponse.json({ error: mensaje }, { status: 403 });
-    }
 
     const nombre = str(body.nombre);
     const correo = str(body.correo);
@@ -56,6 +42,13 @@ export async function POST(req: Request) {
     const event = await prisma.event.findUnique({ where: { slug: eventSlug } });
     if (!event) {
       return NextResponse.json({ error: "Evento no encontrado" }, { status: 404 });
+    }
+
+    // El panel puede cerrar la inscripción de este evento (cupo lleno). El
+    // modal ya lo avisa sin mostrar el formulario, pero se valida aquí
+    // también por si alguien llama a la API directo.
+    if (!event.inscripcionAbierta) {
+      return NextResponse.json({ error: event.inscripcionMensaje }, { status: 403 });
     }
 
     // La universidad se pide sin importar el rol; si no aplica, se guarda así

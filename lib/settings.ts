@@ -55,25 +55,10 @@ export async function getEventoActivo() {
   return prisma.event.findUnique({ where: { slug } });
 }
 
-// ---- Cupos de los formularios públicos (/admin/dashboard/cupos) ----
-export const SETTING_INSCRIPCION_ABIERTA = "inscripcionAbierta";
-export const SETTING_INSCRIPCION_MENSAJE = "inscripcionMensaje";
-export const SETTING_CHARLA_ABIERTA = "charlaAbierta";
-export const SETTING_TALLER_ABIERTA = "tallerAbierta";
-export const SETTING_PROYECTO_ABIERTA = "proyectoAbierta";
-export const SETTING_MODALIDAD_MENSAJE = "modalidadMensaje";
-
-const MENSAJE_INSCRIPCION_POR_DEFECTO =
-  "Ya se llenó el cupo de inscripción para este evento. ¡Gracias por tu interés! Síguenos en redes para enterarte de la próxima edición.";
-const MENSAJE_MODALIDAD_POR_DEFECTO = "Ya se llenó el cupo para esta modalidad.";
-
-// Una casilla cerrada guarda "0"; cualquier otra cosa (incluido que nunca se
-// haya tocado el ajuste) se trata como abierto — así un formulario nuevo
-// empieza disponible sin que haga falta configurar nada primero.
-export async function estaAbierto(key: string): Promise<boolean> {
-  return (await getSetting(key)) !== "0";
-}
-
+// ---- Cupos de los formularios públicos — uno por evento (/admin/dashboard/cupos) ----
+// Viven como columnas en Event (ver prisma/schema.prisma), no en Setting: un
+// cupo cerrado es una propiedad del evento, no un valor global que se
+// arrastraría de una edición a la siguiente.
 export type Cupos = {
   inscripcionAbierta: boolean;
   inscripcionMensaje: string;
@@ -83,22 +68,13 @@ export type Cupos = {
   modalidadMensaje: string;
 };
 
-export async function getCupos(): Promise<Cupos> {
-  const [inscripcionAbierta, inscripcionMensaje, charlaAbierta, tallerAbierta, proyectoAbierta, modalidadMensaje] =
-    await Promise.all([
-      estaAbierto(SETTING_INSCRIPCION_ABIERTA),
-      getSetting(SETTING_INSCRIPCION_MENSAJE),
-      estaAbierto(SETTING_CHARLA_ABIERTA),
-      estaAbierto(SETTING_TALLER_ABIERTA),
-      estaAbierto(SETTING_PROYECTO_ABIERTA),
-      getSetting(SETTING_MODALIDAD_MENSAJE),
-    ]);
+export function cuposDeEvento(e: Cupos): Cupos {
   return {
-    inscripcionAbierta,
-    inscripcionMensaje: inscripcionMensaje || MENSAJE_INSCRIPCION_POR_DEFECTO,
-    charlaAbierta,
-    tallerAbierta,
-    proyectoAbierta,
-    modalidadMensaje: modalidadMensaje || MENSAJE_MODALIDAD_POR_DEFECTO,
+    inscripcionAbierta: e.inscripcionAbierta,
+    inscripcionMensaje: e.inscripcionMensaje,
+    charlaAbierta: e.charlaAbierta,
+    tallerAbierta: e.tallerAbierta,
+    proyectoAbierta: e.proyectoAbierta,
+    modalidadMensaje: e.modalidadMensaje,
   };
 }
